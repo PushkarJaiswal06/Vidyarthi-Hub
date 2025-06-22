@@ -131,14 +131,19 @@ const About = () => {
                 <p className="text-richblack-400 text-xs mb-4">
                   Passionate about creating innovative learning experiences and building scalable web applications
                 </p>
-                <div className="flex justify-center gap-4">
+                <a href="https://www.linkedin.com/in/pushkar-jaiswal06/" target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-richblack-50 transition-all duration-200 my-10">
+                https://www.linkedin.com/in/pushkar-jaiswal06/
+                </a>
+                <br />
+
+                <div className="flex justify-center gap-8 mt-10">
                   <a 
                     href="https://github.com/PushkarJaiswal06" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-richblack-300 hover:text-richblack-50 transition-all duration-200"
                   >
-                    <FaGithub size={20} />
+                    <FaGithub size={30} />
                   </a>
                   <a 
                     href="https://www.linkedin.com/in/pushkar-jaiswal06/" 
@@ -146,7 +151,7 @@ const About = () => {
                     rel="noopener noreferrer"
                     className="text-richblack-300 hover:text-richblack-50 transition-all duration-200"
                   >
-                    <FaLinkedin size={20} />
+                    <FaLinkedin size={30} />
                   </a>
                   <a 
                     href="https://www.instagram.com/pushkar_j.06" 
@@ -154,7 +159,7 @@ const About = () => {
                     rel="noopener noreferrer"
                     className="text-richblack-300 hover:text-richblack-50 transition-all duration-200"
                   >
-                    <FaInstagram size={20} />
+                    <FaInstagram size={30} />
                   </a>
                 </div>
               </div>
