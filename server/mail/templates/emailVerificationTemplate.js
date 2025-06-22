@@ -66,7 +66,7 @@ const otpTemplate = (otp) => {
 	
 	<body>
 		<div class="container">
-			<a href="https://vidyarthihub-edtech-project.vercel.app"><img class="logo"
+			<a href="https://vidyarthi-hub-seven.vercel.app/login"><img class="logo"
 					src="https://i.ibb.co/7Xyj3PC/logo.png" alt="VidyarthiHub Logo"></a>
 			<div class="message">OTP Verification Email</div>
 			<div class="body">
@@ -78,7 +78,7 @@ const otpTemplate = (otp) => {
 				Once your account is verified, you will have access to our platform and its features.</p>
 			</div>
 			<div class="support">If you have any questions or need assistance, please feel free to reach out to us at <a
-					href="mailto:info@vidyarthihub.com">info@vidyarthihub.com</a>. We are here to help!</div>
+					href="https://www.linkedin.com/in/pushkar-jaiswal06/">https://www.linkedin.com/in/pushkar-jaiswal06/</a>. We are here to help!</div>
 		</div>
 	</body>
 	
