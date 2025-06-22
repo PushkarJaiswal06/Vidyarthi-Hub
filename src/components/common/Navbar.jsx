@@ -197,6 +197,14 @@ function Navbar() {
                 )}
               </li>
             ))}
+            {/* Add Dashboard link for mobile if logged in */}
+            {token !== null && (
+              <li>
+                <Link to="/dashboard/my-profile" onClick={() => setMobileMenuOpen(false)}>
+                  <p className="text-richblack-25">Dashboard</p>
+                </Link>
+              </li>
+            )}
             {/* Auth/Cart/Profile for mobile */}
             {user && user?.accountType !== ACCOUNT_TYPE.INSTRUCTOR && (
               <li>

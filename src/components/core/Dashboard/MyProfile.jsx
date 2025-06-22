@@ -14,7 +14,7 @@ export default function MyProfile() {
       <h1 className="mb-14 text-3xl font-medium text-richblack-5">
         My Profile
       </h1>
-      <div className="flex items-center justify-between rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-8 px-12">
+      <div className="flex flex-col md:flex-row items-center md:items-center justify-between rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-4 md:p-8 md:px-12 gap-4 md:gap-0">
         <div className="flex items-center gap-x-4">
           <img
             src={user?.image}
@@ -37,8 +37,8 @@ export default function MyProfile() {
           <RiEditBoxLine />
         </IconBtn>
       </div>
-      <div className="my-10 flex flex-col gap-y-10 rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-8 px-12">
-        <div className="flex w-full items-center justify-between">
+      <div className="my-10 flex flex-col gap-y-10 rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-4 md:p-8 md:px-12">
+        <div className="flex w-full flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
           <p className="text-lg font-semibold text-richblack-5">About</p>
           <IconBtn
             text="Edit"
@@ -59,8 +59,8 @@ export default function MyProfile() {
           {user?.additionalDetails?.about ?? "Write Something About Yourself"}
         </p>
       </div>
-      <div className="my-10 flex flex-col gap-y-10 rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-8 px-12">
-        <div className="flex w-full items-center justify-between">
+      <div className="my-10 flex flex-col gap-y-10 rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-4 md:p-8 md:px-12">
+        <div className="flex w-full flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
           <p className="text-lg font-semibold text-richblack-5">
             Personal Details
           </p>
@@ -73,7 +73,7 @@ export default function MyProfile() {
             <RiEditBoxLine />
           </IconBtn>
         </div>
-        <div className="flex max-w-[500px] justify-between">
+        <div className="flex flex-col md:flex-row w-full max-w-full md:max-w-[500px] justify-between gap-6 md:gap-0">
           <div className="flex flex-col gap-y-5">
             <div>
               <p className="mb-2 text-sm text-richblack-600">First Name</p>
