@@ -3,6 +3,7 @@ import {Route, Routes, useNavigate } from "react-router-dom";
 import Home from "./pages/Home"
 import Navbar from "./components/common/Navbar"
 import OpenRoute from "./components/core/Auth/OpenRoute"
+import { Helmet } from "react-helmet";
 
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -39,6 +40,10 @@ function App() {
 
   return (
    <div className="w-screen min-h-screen bg-richblack-900 flex flex-col font-inter">
+    <Helmet>
+      <title>VIDYARTHI HUB LMS - Modern Learning Management System</title>
+      <meta name="description" content="VIDYARTHI HUB LMS is a modern, full-stack Learning Management System (LMS) built for students, instructors, and institutions. Enroll in courses, teach online, track progress, and manage learning—all in one seamless platform." />
+    </Helmet>
     <Navbar/>
     <Routes>
       <Route path="/" element={<Home/>} />
