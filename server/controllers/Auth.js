@@ -202,21 +202,22 @@ exports.sendotp = async (req, res) => {
 
     console.log("Email received:", email);
 
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      })
+    }
+
     // Check if user is already present
     // Find user with provided email
     const checkUserPresent = await User.findOne({ email })
     console.log("User already exists:", !!checkUserPresent);
     
-    // to be used in case of signup
-
-    // If user found with provided email
-    if (checkUserPresent) {
-      // Return 401 Unauthorized status code with error message
-      return res.status(401).json({
-        success: false,
-        message: `User is Already Registered`,
-      })
-    }
+    // For signup, we allow OTP sending even if user doesn't exist
+    // For password reset, we might want to check if user exists
+    // For now, let's allow OTP sending for both cases
 
     var otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
@@ -245,13 +246,27 @@ exports.sendotp = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `OTP Sent Successfully`,
-      otp,
+      otp, // In development, you might want to return the OTP for testing
     })
   } catch (error) {
     console.log("=== SENDOTP ERROR ===");
     console.log("General error in sendotp:", error.message)
     console.log("Full error:", error);
-    return res.status(500).json({ success: false, error: error.message })
+    
+    // Check if it's an email configuration error
+    if (error.message.includes("email configuration") || error.message.includes("MAIL_HOST")) {
+      return res.status(500).json({ 
+        success: false, 
+        message: "Email service not configured. Please contact administrator.",
+        error: "Email configuration missing"
+      })
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: "Could not send OTP. Please try again.",
+      error: error.message 
+    })
   }
 }
 

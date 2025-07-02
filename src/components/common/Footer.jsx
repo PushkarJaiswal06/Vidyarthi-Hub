@@ -1,169 +1,104 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import HighlightText from "../core/HomePage/HighlightText";
+import { FaGithub, FaLinkedin, FaInstagram, FaArrowRight } from "react-icons/fa";
 
-// Icons
-import { FaFacebook, FaGoogle, FaTwitter, FaYoutube, FaGithub, FaLinkedin, FaInstagram } from "react-icons/fa";
-
-const BottomFooter = ["Privacy Policy", "Terms of Service", "Contact Us"];
-
-const Footer = () => {
+function AnimatedFooterBar() {
   return (
-    <div className="bg-richblack-800">
-      <div className="flex lg:flex-row gap-8 items-center justify-between w-11/12 max-w-maxContent text-richblack-400 leading-6 mx-auto relative py-14">
-        <div className="border-b w-[100%] flex flex-col lg:flex-row pb-5 border-richblack-700">
-          {/* Section 1 */}
-          <div className="lg:w-[50%] flex flex-wrap flex-row justify-between lg:border-r lg:border-richblack-700 pl-3 lg:pr-5 gap-3">
-            <div className="w-[30%] flex flex-col gap-3 lg:w-[30%] mb-7 lg:pl-0">
-              <div className="text-2xl font-bold text-white">
-                <HighlightText text="VidyarthiHub" />
-              </div>
-              <h1 className="text-richblack-50 font-semibold text-[16px]">
-                Company
-              </h1>
-              <div className="flex flex-col gap-2">
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/about">About</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/contact">Contact</Link>
-                </div>
-              </div>
-              <div className="flex gap-3 text-lg">
-                <a 
-                  href="https://github.com/PushkarJaiswal06" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-richblack-50 transition-all duration-200"
-                >
-                  <FaGithub />
-                </a>
-                <a 
-                  href="https://www.linkedin.com/in/pushkar-jaiswal06/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-richblack-50 transition-all duration-200"
-                >
-                  <FaLinkedin />
-                </a>
-                <a 
-                  href="https://www.instagram.com/pushkar_j.06" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-richblack-50 transition-all duration-200"
-                >
-                  <FaInstagram />
-                </a>
-              </div>
-            </div>
-
-            <div className="w-[48%] lg:w-[30%] mb-7 lg:pl-0">
-              <h1 className="text-richblack-50 font-semibold text-[16px]">
-                Resources
-              </h1>
-
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/catalog">Browse Courses</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/dashboard">Dashboard</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/signup">Become Instructor</Link>
-                </div>
-              </div>
-
-              <h1 className="text-richblack-50 font-semibold text-[16px] mt-7">
-                Support
-              </h1>
-              <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200 mt-2">
-                <Link to="/contact">Help Center</Link>
-              </div>
-            </div>
-
-            <div className="w-[48%] lg:w-[30%] mb-7 lg:pl-0">
-              <h1 className="text-richblack-50 font-semibold text-[16px]">
-                Legal
-              </h1>
-
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/privacy">Privacy Policy</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/terms">Terms of Service</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/contact">Contact Us</Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2 */}
-          <div className="lg:w-[50%] flex flex-wrap flex-row justify-between pl-3 lg:pl-5 gap-3">
-            <div className="w-[48%] lg:w-[30%] mb-7 lg:pl-0">
-              <h1 className="text-richblack-50 font-semibold text-[16px]">
-                Quick Links
-              </h1>
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/">Home</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/catalog">Catalog</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/about">About</Link>
-                </div>
-                <div className="text-[14px] cursor-pointer hover:text-richblack-50 transition-all duration-200">
-                  <Link to="/contact">Contact</Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-row items-center justify-between w-11/12 max-w-maxContent text-richblack-400 mx-auto  pb-14 text-sm">
-        {/* Section 1 */}
-        <div className="flex justify-between lg:items-start items-center flex-col lg:flex-row gap-3 w-full">
-          <div className="flex flex-row">
-            {BottomFooter.map((ele, i) => {
-              return (
-                <div
-                  key={i}
-                  className={` ${
-                    BottomFooter.length - 1 === i
-                      ? ""
-                      : "border-r border-richblack-700 cursor-pointer hover:text-richblack-50 transition-all duration-200"
-                  } px-3 `}
-                >
-                  <Link to={ele.split(" ").join("-").toLocaleLowerCase()}>
-                    {ele}
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-          <div className="text-center">Made with ❤️ by <a 
-                  href="https://www.linkedin.com/in/pushkar-jaiswal06/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-yellow-25 font-semibold hover:text-yellow-50 transition-all duration-200 underline"
-                >
-                 {" "}
-                 <HighlightText text="Pushkar Jaiswal " />
-                </a> © 2025 
-                
-                </div>
-
-          
-        </div>
-      </div>
-    </div>
+    <div className="w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-600 to-purple-500 animate-gradient-x rounded-t absolute top-0 left-0"></div>
   );
-};
+}
 
-export default Footer;
+
+
+// Add this to your global CSS (e.g., index.css or App.css):
+/*
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease-in-out infinite;
+}
+*/
+
+export default function Footer() {
+  return (
+    <footer className="w-full bg-[#181824] text-white py-12 px-4">
+      <div className="max-w-6xl mx-auto flex flex-col gap-8">
+        {/* Top Row: Quote & Nav */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+          <div className="flex-1">
+            <h2 className="text-3xl md:text-4xl font-extrabold leading-tight">
+              Empowering students and instructors to achieve more, together.
+            </h2>
+          </div>
+          <nav className="flex flex-wrap gap-6 text-lg font-semibold justify-start md:justify-end">
+            <Link to="/about" className="hover:text-cyan-300 transition">About</Link>
+            <Link to="/catalog" className="hover:text-cyan-300 transition">Courses</Link>
+            <Link to="/contact" className="hover:text-cyan-300 transition">Contact</Link>
+            <Link to="/team" className="hover:text-cyan-300 transition">Team</Link>
+            <Link to="/login" className="hover:text-cyan-300 transition">Login</Link>
+            <Link to="/signup" className="hover:text-cyan-300 transition">Signup</Link>
+          </nav>
+        </div>
+
+        {/* Middle Row: Action Cards */}
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex-1 border-2 border-cyan-400 rounded-xl p-6 flex flex-col items-center bg-[#181824]/80">
+            <span className="text-xl font-bold mb-3 text-center">Need help with your learning journey?</span>
+            <a
+              href="mailto:pushkarbst90@gmail.com"
+              className="bg-cyan-400 text-[#181824] font-bold px-6 py-2 rounded-lg shadow hover:bg-cyan-300 transition mt-2"
+            >
+              pushkarbst90@gmail.com
+            </a>
+          </div>
+          <div className="flex-1 border-2 border-cyan-400 rounded-xl p-6 flex flex-col items-center bg-[#181824]/80">
+            <span className="text-xl font-bold mb-3 text-center">Want to see my professional profile?</span>
+            <a
+              href="https://www.linkedin.com/in/pushkar-jaiswal-1b6b28249/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-transparent border-2 border-cyan-400 text-cyan-200 font-bold px-6 py-2 rounded-lg shadow hover:bg-cyan-400 hover:text-[#181824] transition mt-2"
+            >
+              View Resume
+            </a>
+          </div>
+        </div>
+
+        {/* Bottom Row: Logo, Socials, Made by, Copyright */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mt-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-4xl md:text-5xl font-extrabold tracking-tight">VidyarthiHub</span>
+            <div className="flex items-center gap-2 text-sm text-gray-300">
+              <span>Made by</span>
+              <a
+                href="https://www.linkedin.com/in/pushkar-jaiswal-1b6b28249/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-cyan-300"
+              >
+                Pushkar Jaiswal
+              </a>
+            </div>
+            <div className="text-xs text-gray-400">© 2024 VidyarthiHub. All rights reserved.</div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-4">
+              <a href="https://www.linkedin.com/in/pushkar-jaiswal06/" target="_blank" rel="noopener noreferrer">
+                <FaLinkedin className="text-cyan-300 hover:text-white text-2xl" />
+              </a>
+              <a href="https://github.com/pushkarjaiswal06" target="_blank" rel="noopener noreferrer">
+                <FaGithub className="text-cyan-300 hover:text-white text-2xl" />
+              </a>
+              <a href="https://www.instagram.com/pushkar_j.06" target="_blank" rel="noopener noreferrer">
+                <FaInstagram className="text-cyan-300 hover:text-white text-2xl" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

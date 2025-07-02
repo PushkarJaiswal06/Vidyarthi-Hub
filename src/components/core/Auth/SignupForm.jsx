@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { toast } from "react-hot-toast"
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
+import { FaUser, FaEnvelope, FaLock, FaUserGraduate, FaChalkboardTeacher } from "react-icons/fa"
 import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 
@@ -26,6 +27,7 @@ function SignupForm() {
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const { firstName, lastName, email, password, confirmPassword } = formData
 
@@ -38,33 +40,42 @@ function SignupForm() {
   }
 
   // Handle Form Submission
-  const handleOnSubmit = (e) => {
+  const handleOnSubmit = async (e) => {
     e.preventDefault()
 
     if (password !== confirmPassword) {
       toast.error("Passwords Do Not Match")
       return
     }
-    const signupData = {
-      ...formData,
-      accountType,
+
+    setIsLoading(true)
+    
+    try {
+      const signupData = {
+        ...formData,
+        accountType,
+      }
+
+      // Setting signup data to state
+      // To be used after otp verification
+      dispatch(setSignupData(signupData))
+      // Send OTP to user for verification
+      await dispatch(sendOtp(formData.email, navigate))
+
+      // Reset
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      })
+      setAccountType(ACCOUNT_TYPE.STUDENT)
+    } catch (error) {
+      console.error("Signup error:", error)
+    } finally {
+      setIsLoading(false)
     }
-
-    // Setting signup data to state
-    // To be used after otp verification
-    dispatch(setSignupData(signupData))
-    // Send OTP to user for verification
-    dispatch(sendOtp(formData.email, navigate))
-
-    // Reset
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    })
-    setAccountType(ACCOUNT_TYPE.STUDENT)
   }
 
   // data to pass to Tab component
@@ -73,135 +84,178 @@ function SignupForm() {
       id: 1,
       tabName: "Student",
       type: ACCOUNT_TYPE.STUDENT,
+      icon: <FaUserGraduate className="h-3 w-3" />,
     },
     {
       id: 2,
       tabName: "Instructor",
       type: ACCOUNT_TYPE.INSTRUCTOR,
+      icon: <FaChalkboardTeacher className="h-3 w-3" />,
     },
   ]
 
   return (
-    <div>
+    <div className="w-full">
       {/* Tab */}
-      <Tab tabData={tabData} field={accountType} setField={setAccountType} />
+      <div className="mb-4">
+        <Tab tabData={tabData} field={accountType} setField={setAccountType} />
+      </div>
+      
       {/* Form */}
-      <form onSubmit={handleOnSubmit} className="flex w-full flex-col gap-y-4">
-        <div className="flex gap-x-4">
-          <label>
-            <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
-              First Name <sup className="text-pink-200">*</sup>
-            </p>
-            <input
-              required
-              type="text"
-              name="firstName"
-              value={firstName}
-              onChange={handleOnChange}
-              placeholder="Enter first name"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5"
-            />
-          </label>
-          <label>
-            <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
-              Last Name <sup className="text-pink-200">*</sup>
-            </p>
-            <input
-              required
-              type="text"
-              name="lastName"
-              value={lastName}
-              onChange={handleOnChange}
-              placeholder="Enter last name"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5"
-            />
-          </label>
+      <form onSubmit={handleOnSubmit} className="flex flex-col gap-3">
+        {/* Name Fields */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="firstName" className="block mb-1 text-sm font-medium text-white/80">
+              First Name <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+                <FaUser size={12} />
+              </span>
+              <input
+                required
+                type="text"
+                name="firstName"
+                id="firstName"
+                value={firstName}
+                onChange={handleOnChange}
+                placeholder="First name"
+                className="w-full pl-8 pr-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-purple-400 focus:outline-none transition text-sm"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="lastName" className="block mb-1 text-sm font-medium text-white/80">
+              Last Name <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+                <FaUser size={12} />
+              </span>
+              <input
+                required
+                type="text"
+                name="lastName"
+                id="lastName"
+                value={lastName}
+                onChange={handleOnChange}
+                placeholder="Last name"
+                className="w-full pl-8 pr-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-purple-400 focus:outline-none transition text-sm"
+              />
+            </div>
+          </div>
         </div>
-        <label className="w-full">
-          <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
-            Email Address <sup className="text-pink-200">*</sup>
-          </p>
-          <input
-            required
-            type="text"
-            name="email"
-            value={email}
-            onChange={handleOnChange}
-            placeholder="Enter email address"
-            style={{
-              boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-            }}
-            className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5"
-          />
-        </label>
-        <div className="flex gap-x-4">
-          <label className="relative">
-            <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
-              Create Password <sup className="text-pink-200">*</sup>
-            </p>
+
+        {/* Email Field */}
+        <div>
+          <label htmlFor="email" className="block mb-1 text-sm font-medium text-white/80">
+            Email Address <span className="text-red-400">*</span>
+          </label>
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+              <FaEnvelope size={12} />
+            </span>
             <input
               required
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={password}
+              type="email"
+              name="email"
+              id="email"
+              value={email}
               onChange={handleOnChange}
-              placeholder="Enter Password"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5"
+              placeholder="Enter email address"
+              className="w-full pl-8 pr-4 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-purple-400 focus:outline-none transition text-sm"
             />
-            <span
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-[38px] z-[10] cursor-pointer"
-            >
-              {showPassword ? (
-                <AiOutlineEyeInvisible fontSize={24} fill="#AFB2BF" />
-              ) : (
-                <AiOutlineEye fontSize={24} fill="#AFB2BF" />
-              )}
-            </span>
-          </label>
-          <label className="relative">
-            <p className="mb-1 text-[0.875rem] leading-[1.375rem] text-richblack-5">
-              Confirm Password <sup className="text-pink-200">*</sup>
-            </p>
-            <input
-              required
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={confirmPassword}
-              onChange={handleOnChange}
-              placeholder="Confirm Password"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5"
-            />
-            <span
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-[38px] z-[10] cursor-pointer"
-            >
-              {showConfirmPassword ? (
-                <AiOutlineEyeInvisible fontSize={24} fill="#AFB2BF" />
-              ) : (
-                <AiOutlineEye fontSize={24} fill="#AFB2BF" />
-              )}
-            </span>
-          </label>
+          </div>
         </div>
+
+        {/* Password Fields */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="password" className="block mb-1 text-sm font-medium text-white/80">
+              Password <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+                <FaLock size={12} />
+              </span>
+              <input
+                required
+                type={showPassword ? "text" : "password"}
+                name="password"
+                id="password"
+                value={password}
+                onChange={handleOnChange}
+                placeholder="Create password"
+                className="w-full pl-8 pr-8 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-purple-400 focus:outline-none transition text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/60"
+              >
+                {showPassword ? <AiOutlineEyeInvisible size={14} /> : <AiOutlineEye size={14} />}
+              </button>
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="confirmPassword" className="block mb-1 text-sm font-medium text-white/80">
+              Confirm Password <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-white/40">
+                <FaLock size={12} />
+              </span>
+              <input
+                required
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={handleOnChange}
+                placeholder="Confirm password"
+                className="w-full pl-8 pr-8 py-2 rounded-lg bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-purple-400 focus:outline-none transition text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/60"
+              >
+                {showConfirmPassword ? <AiOutlineEyeInvisible size={14} /> : <AiOutlineEye size={14} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Submit Button */}
         <button
           type="submit"
-          className="mt-6 rounded-[8px] bg-yellow-50 py-[8px] px-[12px] font-medium text-richblack-900"
+          disabled={isLoading}
+          className="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold shadow-md hover:from-purple-600 hover:to-indigo-600 transition disabled:opacity-60 disabled:cursor-not-allowed text-sm mt-2"
         >
-          Create Account
+          {isLoading ? (
+            <span>Creating Account...</span>
+          ) : (
+            <span>Create Account</span>
+          )}
         </button>
+
+        {/* Terms and Login Link */}
+        <div className="text-center text-white/60 text-xs">
+          By signing up, you agree to our{' '}
+          <span className="text-purple-400 hover:underline cursor-pointer">Terms of Service</span>
+          {' '}and{' '}
+          <span className="text-purple-400 hover:underline cursor-pointer">Privacy Policy</span>
+        </div>
+        
+        <div className="text-center text-white/60 text-xs">
+          Already have an account?{' '}
+          <span className="text-purple-400 hover:underline cursor-pointer">
+            Sign in
+          </span>
+        </div>
       </form>
     </div>
   )

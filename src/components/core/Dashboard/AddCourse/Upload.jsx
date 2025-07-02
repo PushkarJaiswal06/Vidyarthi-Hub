@@ -59,8 +59,8 @@ export default function Upload({
 
   return (
     <div className="flex flex-col space-y-2">
-      <label className="text-sm text-richblack-5" htmlFor={name}>
-        {label} {!viewData && <sup className="text-pink-200">*</sup>}
+      <label className="text-base font-semibold text-white/90 mb-1" htmlFor={name}>
+        {label} {!viewData && <sup className="text-yellow-300">*</sup>}
       </label>
       <div
         className={`${

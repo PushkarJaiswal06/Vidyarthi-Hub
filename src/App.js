@@ -4,6 +4,8 @@ import Home from "./pages/Home"
 import Navbar from "./components/common/Navbar"
 import OpenRoute from "./components/core/Auth/OpenRoute"
 import { Helmet } from "react-helmet";
+import ScrollToTop from "./components/common/ScrollToTop";
+import Footer from "./components/common/Footer";
 
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
@@ -39,135 +41,148 @@ function App() {
 
 
   return (
-   <div className="w-screen min-h-screen bg-richblack-900 flex flex-col font-inter">
+   <div className="min-h-screen bg-gradient-to-br from-richblack-900 via-purple-900 to-richblack-800 font-sans">
     <Helmet>
-      <title>VIDYARTHI HUB LMS - Modern Learning Management System</title>
-      <meta name="description" content="VIDYARTHI HUB LMS is a modern, full-stack Learning Management System (LMS) built for students, instructors, and institutions. Enroll in courses, teach online, track progress, and manage learning—all in one seamless platform." />
+      <title>VidyarthiHub - Next Generation Learning Platform</title>
+      <meta name="description" content="VidyarthiHub is a modern, interactive learning platform with 3D environments, AI-driven content, and expert-led courses. Transform your future with cutting-edge education technology." />
+      <meta name="keywords" content="Online Learning, 3D Education, AI Learning, Interactive Courses, Modern LMS, VidyarthiHub" />
+      <meta name="author" content="VidyarthiHub Team" />
+      <meta property="og:title" content="VidyarthiHub - Next Generation Learning Platform" />
+      <meta property="og:description" content="Experience the future of education with interactive 3D environments, personalized AI-driven content, and expert-led courses from industry professionals." />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="https://vidyarthihub.com" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     </Helmet>
-    <Navbar/>
-    <Routes>
-      <Route path="/" element={<Home/>} />
-      <Route path="catalog" element={<Catalog/>} />
-      <Route path="catalog/:catalogName" element={<Catalog/>} />
-      <Route path="courses/:courseId" element={<CourseDetails/>} />
-      
-      <Route
-          path="signup"
-          element={
-            <OpenRoute>
-              <Signup />
-            </OpenRoute>
-          }
-        />
-    <Route
-          path="login"
-          element={
-            <OpenRoute>
-              <Login />
-            </OpenRoute>
-          }
-        />
-
-    <Route
-          path="forgot-password"
-          element={
-            <OpenRoute>
-              <ForgotPassword />
-            </OpenRoute>
-          }
-        />  
-
-      <Route
-          path="verify-email"
-          element={
-            <OpenRoute>
-              <VerifyEmail />
-            </OpenRoute>
-          }
-        />  
-
-    <Route
-          path="update-password/:id"
-          element={
-            <OpenRoute>
-              <UpdatePassword />
-            </OpenRoute>
-          }
-        />  
-
-    <Route
-          path="/about"
-          element={
-            
-              <About />
-            
-          }
-        />
-    <Route path="/contact" element={<Contact />} />
-
-    <Route 
-      element={
-        <PrivateRoute>
-          <Dashboard />
-        </PrivateRoute>
-      }
-    >
-      <Route path="dashboard/my-profile" element={<MyProfile />} />
-      
-      <Route path="dashboard/Settings" element={<Settings />} />
-      
-
-      {
-        user?.accountType === ACCOUNT_TYPE.STUDENT && (
-          <>
-          <Route path="dashboard/cart" element={<Cart />} />
-          <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
-          </>
-        )
-      }
-
-      {
-        user?.accountType === ACCOUNT_TYPE.INSTRUCTOR && (
-          <>
-          <Route path="dashboard/instructor" element={<Instructor />} />
-          <Route path="dashboard/add-course" element={<AddCourse />} />
-          <Route path="dashboard/my-courses" element={<MyCourses />} />
-          <Route path="dashboard/edit-course/:courseId" element={<EditCourse />} />
-          
-          </>
-        )
-      }
-
-
-    </Route>
-
     
-      <Route element={
-        <PrivateRoute>
-          <ViewCourse />
-        </PrivateRoute>
-      }>
-
-      {
-        user?.accountType === ACCOUNT_TYPE.STUDENT && (
-          <>
-          <Route 
-            path="view-course/:courseId/section/:sectionId/sub-section/:subSectionId"
-            element={<VideoDetails />}
+    <Navbar/>
+    <ScrollToTop />
+    <main className="pt-16">
+      <Routes>
+        <Route path="/" element={<Home/>} />
+        <Route path="catalog" element={<Catalog/>} />
+        <Route path="catalog/:catalogName" element={<Catalog/>} />
+        <Route path="courses/:courseId" element={<CourseDetails/>} />
+        
+        <Route
+            path="signup"
+            element={
+              <OpenRoute>
+                <Signup />
+              </OpenRoute>
+            }
           />
-          </>
-        )
-      }
+      <Route
+            path="login"
+            element={
+              <OpenRoute>
+                <Login />
+              </OpenRoute>
+            }
+          />
+
+      <Route
+            path="forgot-password"
+            element={
+              <OpenRoute>
+                <ForgotPassword />
+              </OpenRoute>
+            }
+          />  
+
+        <Route
+            path="verify-email"
+            element={
+              <OpenRoute>
+                <VerifyEmail />
+              </OpenRoute>
+            }
+          />  
+
+      <Route
+            path="update-password/:id"
+            element={
+              <OpenRoute>
+                <UpdatePassword />
+              </OpenRoute>
+            }
+          />  
+
+        <Route
+            path="/about"
+            element={
+              
+                <About />
+              
+            }
+          />
+      <Route path="/contact" element={<Contact />} />
+
+      <Route 
+        element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      >
+        <Route path="dashboard/my-profile" element={<MyProfile />} />
+        
+        <Route path="dashboard/Settings" element={<Settings />} />
+        
+
+        {
+          user?.accountType === ACCOUNT_TYPE.STUDENT && (
+            <>
+            <Route path="dashboard/cart" element={<Cart />} />
+            <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
+            </>
+          )
+        }
+
+        {
+          user?.accountType === ACCOUNT_TYPE.INSTRUCTOR && (
+            <>
+            <Route path="dashboard/instructor" element={<Instructor />} />
+            <Route path="dashboard/add-course" element={<AddCourse />} />
+            <Route path="dashboard/my-courses" element={<MyCourses />} />
+            <Route path="dashboard/edit-course/:courseId" element={<EditCourse />} />
+            
+            </>
+          )
+        }
+
 
       </Route>
 
+      
+        <Route element={
+          <PrivateRoute>
+            <ViewCourse />
+          </PrivateRoute>
+        }>
+
+        {
+          user?.accountType === ACCOUNT_TYPE.STUDENT && (
+            <>
+            <Route 
+              path="view-course/:courseId/section/:sectionId/sub-section/:subSectionId"
+              element={<VideoDetails />}
+            />
+            </>
+          )
+        }
+
+        </Route>
 
 
-    <Route path="*" element={<Error />} />
+
+      <Route path="*" element={<Error />} />
 
 
-    </Routes>
-
+      </Routes>
+    </main>
+    <Footer />
    </div>
   );
 }

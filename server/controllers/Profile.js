@@ -151,12 +151,18 @@ exports.getEnrolledCourses = async (req, res) => {
     })
       .populate({
         path: "courses",
-        populate: {
-          path: "courseContent",
-          populate: {
-            path: "subSection",
+        populate: [
+          {
+            path: "courseContent",
+            populate: {
+              path: "subSection",
+            },
           },
-        },
+          {
+            path: "instructor",
+            select: "firstName lastName email _id",
+          },
+        ],
       })
       .exec()
     userDetails = userDetails.toObject()
@@ -212,6 +218,7 @@ exports.getEnrolledCourses = async (req, res) => {
 exports.instructorDashboard = async (req, res) => {
   try {
     const courseDetails = await Course.find({ instructor: req.user.id })
+      .populate("studentsEnrolled", "firstName lastName email _id")
 
     const courseData = courseDetails.map((course) => {
       const totalStudentsEnrolled = course.studentsEnrolled.length
@@ -222,6 +229,7 @@ exports.instructorDashboard = async (req, res) => {
         _id: course._id,
         courseName: course.courseName,
         courseDescription: course.courseDescription,
+        studentsEnrolled: course.studentsEnrolled,
         // Include other course properties as needed
         totalStudentsEnrolled,
         totalAmountGenerated,

@@ -1,87 +1,189 @@
-import React from "react";
-import TimeLineImage from "../../../assets/Images/TimelineImage.png";
-import Logo1 from "../../../assets/TimeLineLogo/Logo1.svg";
-import Logo2 from "../../../assets/TimeLineLogo/Logo2.svg";
-import Logo3 from "../../../assets/TimeLineLogo/Logo3.svg";
-import Logo4 from "../../../assets/TimeLineLogo/Logo4.svg";
-
-const TimeLine = [
-    {
-      Logo: Logo1,
-      Heading: "Leadership",
-      Description: "Fully committed to the success company",
-    },
-    {
-      Logo: Logo2,
-      Heading: "Responsibility",
-      Description: "Students will always be our top priority",
-    },
-    {
-      Logo: Logo3,
-      Heading: "Flexibility",
-      Description: "The ability to switch is an important skills",
-    },
-    {
-      Logo: Logo4,
-      Heading: "Solve the problem",
-      Description: "Code your way to a solution",
-    },
-  ];
-
+import { motion } from "framer-motion";
+import { 
+  Rocket, 
+  Zap, 
+  Target, 
+  Star, 
+  Award,
+  TrendingUp,
+  Users,
+  Globe,
+  BookOpen,
+  Lightbulb,
+  Code,
+  Palette
+} from "lucide-react";
+import AnimatedHeading from "../../common/AnimatedHeading";
 
 const TimelineSection = () => {
-  return (
-    <div>
-      <div className="flex flex-col lg:flex-row gap-20 mb-20 items-center">
-        <div className="lg:w-[45%] flex flex-col gap-14 lg:gap-3">
-          {TimeLine.map((ele, i) => {
-            return (
-              <div className="flex flex-col lg:gap-3" key={i}>
-                <div className="flex gap-6" key={i}>
-                  <div className="w-[52px] h-[52px] bg-white rounded-full flex justify-center items-center shadow-[#00000012] shadow-[0_0_62px_0]">
-                    <img src={ele.Logo} alt="" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-[18px]">{ele.Heading}</h2>
-                    <p className="text-base">{ele.Description}</p>
-                  </div>
-                </div>
-                <div
-                  className={`hidden ${
-                    TimeLine.length - 1 === i ? "hidden" : "lg:block"
-                  }  h-14 border-dotted border-r border-richblack-100 bg-richblack-400/0 w-[26px]`}
-                ></div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="relative w-fit h-fit shadow-blue-200 shadow-[0px_0px_30px_0px]">
-          <div className="absolute lg:left-[50%] lg:bottom-0 lg:translate-x-[-50%] lg:translate-y-[50%] bg-caribbeangreen-700 flex lg:flex-row flex-col text-white uppercase py-5 gap-4 lg:gap-0 lg:py-10 ">
-            {/* Section 1 */}
-            <div className="flex gap-5 items-center lg:border-r border-caribbeangreen-300 px-7 lg:px-14">
-              <h1 className="text-3xl font-bold w-[75px]">10</h1>
-              <h1 className="text-caribbeangreen-300 text-sm w-[75px]">
-                Years experiences
-              </h1>
-            </div>
+  const timelineData = [
+    {
+      icon: <Rocket className="w-6 h-6" />,
+      title: "Platform Launch",
+      description: "VidyarthiHub officially launched with cutting-edge 3D learning environments",
+      year: "2023",
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: <Users className="w-6 h-6" />,
+      title: "Community Growth",
+      description: "Reached 10,000+ active learners and 500+ expert instructors",
+      year: "2024",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: <Award className="w-6 h-6" />,
+      title: "Industry Recognition",
+      description: "Awarded 'Best Innovation in EdTech' at Global Education Summit",
+      year: "2024",
+      color: "from-yellow-500 to-orange-500"
+    },
+    {
+      icon: <Globe className="w-6 h-6" />,
+      title: "Global Expansion",
+      description: "Expanded to 50+ countries with localized learning experiences",
+      year: "2025",
+      color: "from-green-500 to-teal-500"
+    }
+  ];
 
-            {/* Section 2 */}
-            <div className="flex gap-5 items-center lg:px-14 px-7">
-              <h1 className="text-3xl font-bold w-[75px]">250</h1>
-              <h1 className="text-caribbeangreen-300 text-sm w-[75px]">
-                types of courses
-              </h1>
-            </div>
-            <div></div>
-          </div>
-          <img
-            src={TimeLineImage}
-            alt="timelineImage"
-            className="shadow-white shadow-[20px_20px_0px_0px] object-cover h-[400px] lg:h-fit"
-          />
-        </div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  return (
+    <section className="relative py-20 px-4 lg:px-8 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <motion.div 
+          animate={{ 
+            y: [0, -30, 0],
+            x: [0, 20, 0],
+            rotate: [0, 180, 360]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-20 left-20 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl"
+        />
+        <motion.div 
+          animate={{ 
+            y: [0, 40, 0],
+            x: [0, -25, 0],
+            rotate: [0, -180, -360]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 5 }}
+          className="absolute bottom-20 right-20 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl"
+        />
       </div>
-    </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <motion.div variants={itemVariants} className="mb-8">
+            <AnimatedHeading 
+              size="xl" 
+              strokeColor="#8b5cf6"
+              className="mb-6"
+            >
+              Our Journey of Innovation
+            </AnimatedHeading>
+            <p className="text-xl text-white/80 max-w-3xl mx-auto">
+              From humble beginnings to global impact, discover the milestones that shaped 
+              VidyarthiHub into the revolutionary learning platform it is today.
+            </p>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="relative"
+        >
+          {/* Timeline Line */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-purple-500/50 to-blue-500/50 rounded-full"></div>
+
+          {/* Timeline Items */}
+          <div className="space-y-16">
+            {timelineData.map((item, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
+              >
+                {/* Content */}
+                <div className={`w-1/2 ${index % 2 === 0 ? 'pr-8 text-right' : 'pl-8 text-left'}`}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="glass rounded-2xl p-6 shadow-neon"
+                  >
+                    <div className={`w-12 h-12 bg-gradient-to-r ${item.color} rounded-xl flex items-center justify-center mb-4 ${index % 2 === 0 ? 'ml-auto' : 'mr-auto'}`}>
+                      <div className="text-white">
+                        {item.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
+                    <p className="text-white/70 mb-3">{item.description}</p>
+                    <span className="text-sm font-semibold text-purple-400">{item.year}</span>
+                  </motion.div>
+                </div>
+
+                {/* Timeline Dot */}
+                <div className="relative z-10">
+                  <motion.div
+                    whileHover={{ scale: 1.2 }}
+                    className={`w-8 h-8 bg-gradient-to-r ${item.color} rounded-full border-4 border-richblack-900 shadow-neon`}
+                  />
+                </div>
+
+                {/* Empty space for alignment */}
+                <div className="w-1/2"></div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Future Vision */}
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="mt-20 text-center"
+        >
+          <div className="glass rounded-3xl p-8 shadow-neon">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Star className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">The Future Awaits</h3>
+            <p className="text-white/80 max-w-2xl mx-auto">
+              We're just getting started. Our vision extends beyond traditional education, 
+              creating immersive learning experiences that prepare learners for the challenges of tomorrow.
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    </section>
   );
 };
 

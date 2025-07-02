@@ -10,6 +10,8 @@ import { markLectureAsComplete } from "../../../services/operations/courseDetail
 import { updateCompletedLectures } from "../../../slices/viewCourseSlice"
 import IconBtn from "../../common/IconBtn"
 
+const TABS = ["Overview", "Notes", "Discussions", "Resources"]
+
 const VideoDetails = () => {
   const { courseId, sectionId, subSectionId } = useParams()
   const navigate = useNavigate()
@@ -24,6 +26,11 @@ const VideoDetails = () => {
   const [previewSource, setPreviewSource] = useState("")
   const [videoEnded, setVideoEnded] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("Overview")
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState("")
+  const [discussions, setDiscussions] = useState([])
+  const [newDiscussion, setNewDiscussion] = useState("")
 
   useEffect(() => {
     ;(async () => {
@@ -169,7 +176,8 @@ const VideoDetails = () => {
   }
 
   return (
-    <div className="flex flex-col gap-5 text-white">
+    <div className="flex flex-col gap-5 text-white relative">
+      {/* Video Player */}
       {!videoData ? (
         <img
           src={previewSource}
@@ -194,53 +202,128 @@ const VideoDetails = () => {
               }}
               className="full absolute inset-0 z-[100] grid h-full place-content-center font-inter"
             >
-              {!completedLectures.includes(subSectionId) && (
+              {/* Floating Actions */}
+              <div className="flex flex-col gap-3 items-center">
+                {!completedLectures.includes(subSectionId) && (
+                  <IconBtn
+                    disabled={loading}
+                    onclick={handleLectureCompletion}
+                    text={!loading ? "Mark As Completed" : "Loading..."}
+                    customClasses="text-xl max-w-max px-4 mx-auto"
+                  />
+                )}
                 <IconBtn
                   disabled={loading}
-                  onclick={() => handleLectureCompletion()}
-                  text={!loading ? "Mark As Completed" : "Loading..."}
-                  customClasses="text-xl max-w-max px-4 mx-auto"
+                  onclick={() => {
+                    if (playerRef?.current) {
+                      playerRef?.current?.seek(0)
+                      setVideoEnded(false)
+                    }
+                  }}
+                  text="Rewatch"
+                  customClasses="text-xl max-w-max px-4 mx-auto mt-2"
                 />
-              )}
-              <IconBtn
-                disabled={loading}
-                onclick={() => {
-                  if (playerRef?.current) {
-                    // set the current time of the video to 0
-                    playerRef?.current?.seek(0)
-                    setVideoEnded(false)
-                  }
-                }}
-                text="Rewatch"
-                customClasses="text-xl max-w-max px-4 mx-auto mt-2"
-              />
-              <div className="mt-10 flex min-w-[250px] justify-center gap-x-4 text-xl">
-                {!isFirstVideo() && (
-                  <button
-                    disabled={loading}
-                    onClick={goToPrevVideo}
-                    className="blackButton"
-                  >
-                    Prev
-                  </button>
-                )}
-                {!isLastVideo() && (
-                  <button
-                    disabled={loading}
-                    onClick={goToNextVideo}
-                    className="blackButton"
-                  >
-                    Next
-                  </button>
-                )}
+                <div className="mt-6 flex min-w-[250px] justify-center gap-x-4 text-xl">
+                  {!isFirstVideo() && (
+                    <button
+                      disabled={loading}
+                      onClick={goToPrevVideo}
+                      className="blackButton"
+                    >
+                      Prev
+                    </button>
+                  )}
+                  {!isLastVideo() && (
+                    <button
+                      disabled={loading}
+                      onClick={goToNextVideo}
+                      className="blackButton"
+                    >
+                      Next
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </Player>
       )}
-
-      <h1 className="mt-4 text-3xl font-semibold">{videoData?.title}</h1>
-      <p className="pt-2 pb-6">{videoData?.description}</p>
+      {/* Tabs */}
+      <div className="mt-6 flex gap-4 border-b border-cyan-900/40">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            className={`px-4 py-2 font-semibold rounded-t-lg transition-all duration-200 ${activeTab === tab ? "bg-cyan-700/80 text-white" : "bg-transparent text-cyan-200 hover:bg-cyan-900/40"}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      {/* Tab Content */}
+      <div className="bg-white/10 backdrop-blur-xl rounded-b-2xl p-6 mt-0">
+        {activeTab === "Overview" && (
+          <>
+            <h1 className="mt-2 text-2xl font-semibold">{videoData?.title}</h1>
+            <p className="pt-2 pb-6">{videoData?.description}</p>
+          </>
+        )}
+        {activeTab === "Notes" && (
+          <div>
+            <div className="mb-4 flex gap-2">
+              <input
+                className="flex-1 px-3 py-2 rounded bg-cyan-900/40 text-white"
+                placeholder="Add a note..."
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+              />
+              <button
+                className="px-4 py-2 rounded bg-cyan-700 text-white font-semibold"
+                onClick={() => {
+                  if (newNote.trim()) {
+                    setNotes([...notes, newNote])
+                    setNewNote("")
+                  }
+                }}
+              >Add</button>
+            </div>
+            <ul className="space-y-2">
+              {notes.map((note, idx) => (
+                <li key={idx} className="bg-cyan-900/30 px-4 py-2 rounded text-cyan-100">{note}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {activeTab === "Discussions" && (
+          <div>
+            <div className="mb-4 flex gap-2">
+              <input
+                className="flex-1 px-3 py-2 rounded bg-cyan-900/40 text-white"
+                placeholder="Start a discussion..."
+                value={newDiscussion}
+                onChange={e => setNewDiscussion(e.target.value)}
+              />
+              <button
+                className="px-4 py-2 rounded bg-cyan-700 text-white font-semibold"
+                onClick={() => {
+                  if (newDiscussion.trim()) {
+                    setDiscussions([...discussions, newDiscussion])
+                    setNewDiscussion("")
+                  }
+                }}
+              >Post</button>
+            </div>
+            <ul className="space-y-2">
+              {discussions.map((msg, idx) => (
+                <li key={idx} className="bg-cyan-900/30 px-4 py-2 rounded text-cyan-100">{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {activeTab === "Resources" && (
+          <div className="text-cyan-200">No resources available for this lecture.</div>
+        )}
+      </div>
     </div>
   )
 }

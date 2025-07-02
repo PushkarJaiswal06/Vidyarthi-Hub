@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { FiTrash2 } from "react-icons/fi"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
@@ -8,8 +9,11 @@ export default function DeleteAccount() {
   const { token } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [showModal, setShowModal] = useState(false)
+  const [confirmText, setConfirmText] = useState("")
 
   async function handleDeleteAccount() {
+    setShowModal(false)
     try {
       dispatch(deleteProfile(token, navigate))
     } catch (error) {
@@ -31,18 +35,52 @@ export default function DeleteAccount() {
             <p>Would you like to delete account?</p>
             <p>
               This account may contain Paid Courses. Deleting your account is
-              permanent and will remove all the contain associated with it.
+              permanent and will remove all the content associated with it.
             </p>
           </div>
           <button
             type="button"
             className="w-fit cursor-pointer italic text-pink-300"
-            onClick={handleDeleteAccount}
+            onClick={() => setShowModal(true)}
           >
             I want to delete my account.
           </button>
         </div>
       </div>
+      {/* Confirmation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-richblack-800 rounded-xl p-8 shadow-xl border border-pink-700 w-full max-w-md flex flex-col items-center">
+            <h3 className="text-xl font-bold text-pink-200 mb-4">Confirm Account Deletion</h3>
+            <p className="text-pink-100 mb-4 text-center">
+              This action is <span className="font-bold">permanent</span> and cannot be undone.<br />
+              To confirm, type <span className="font-bold">DELETE</span> below and click Delete.
+            </p>
+            <input
+              type="text"
+              className="mb-4 px-4 py-2 rounded bg-richblack-700 text-white border border-pink-700 focus:outline-none"
+              placeholder="Type DELETE to confirm"
+              value={confirmText}
+              onChange={e => setConfirmText(e.target.value)}
+            />
+            <div className="flex gap-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-pink-700 text-white hover:bg-pink-800 disabled:opacity-50"
+                disabled={confirmText !== "DELETE"}
+                onClick={handleDeleteAccount}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

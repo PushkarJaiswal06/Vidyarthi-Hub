@@ -37,102 +37,71 @@ export default function CoursesTable({ courses, setCourses }) {
     setLoading(false)
   }
 
-  // console.log("All Course ", courses)
-
+  // Modern Card UI
   return (
     <>
-      <Table className="rounded-xl border border-richblack-800 ">
-        <Thead>
-          <Tr className="flex gap-x-10 rounded-t-md border-b border-b-richblack-800 px-6 py-2">
-            <Th className="flex-1 text-left text-sm font-medium uppercase text-richblack-100">
-              Courses
-            </Th>
-            <Th className="text-left text-sm font-medium uppercase text-richblack-100">
-              Duration
-            </Th>
-            <Th className="text-left text-sm font-medium uppercase text-richblack-100">
-              Price
-            </Th>
-            <Th className="text-left text-sm font-medium uppercase text-richblack-100">
-              Actions
-            </Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {courses?.length === 0 ? (
-            <Tr>
-              <Td className="py-10 text-center text-2xl font-medium text-richblack-100">
-                No courses found
-                {/* TODO: Need to change this state */}
-              </Td>
-            </Tr>
-          ) : (
-            courses?.map((course) => (
-              <Tr
-                key={course._id}
-                className="flex gap-x-10 border-b border-richblack-800 px-6 py-8"
-              >
-                <Td className="flex flex-1 gap-x-4">
-                  <img
-                    src={course?.thumbnail}
-                    alt={course?.courseName}
-                    className="h-[148px] w-[220px] rounded-lg object-cover"
-                  />
-                  <div className="flex flex-col justify-between">
-                    <p className="text-lg font-semibold text-richblack-5">
-                      {course.courseName}
-                    </p>
-                    <p className="text-xs text-richblack-300">
-                      {course.courseDescription.split(" ").length >
-                      TRUNCATE_LENGTH
-                        ? course.courseDescription
-                            .split(" ")
-                            .slice(0, TRUNCATE_LENGTH)
-                            .join(" ") + "..."
-                        : course.courseDescription}
-                    </p>
-                    <p className="text-[12px] text-white">
-                      Created: {formatDate(course.createdAt)}
-                    </p>
+      <div className="flex flex-col gap-8">
+        {courses?.length === 0 ? (
+          <div className="py-10 text-center text-2xl font-medium text-white">
+            No courses found
+          </div>
+        ) : (
+          courses?.map((course) => (
+            <div
+              key={course._id}
+              className="flex flex-col md:flex-row gap-6 bg-white/10 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-cyan-900/30 transition-shadow duration-300"
+            >
+              {/* Thumbnail */}
+              <img
+                src={course?.thumbnail}
+                alt={course?.courseName}
+                className="h-40 w-full md:w-56 rounded-xl object-cover mb-4 md:mb-0"
+              />
+              {/* Info */}
+              <div className="flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {course.courseName}
+                  </h3>
+                  <p className="text-richblack-200 text-sm mb-3">
+                    {course.courseDescription.split(" ").length > TRUNCATE_LENGTH
+                      ? course.courseDescription.split(" ").slice(0, TRUNCATE_LENGTH).join(" ") + "..."
+                      : course.courseDescription}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-richblack-300 mb-2">
+                    <span>Created: {formatDate(course.createdAt)}</span>
                     {course.status === COURSE_STATUS.DRAFT ? (
-                      <p className="flex w-fit flex-row items-center gap-2 rounded-full bg-richblack-700 px-2 py-[2px] text-[12px] font-medium text-pink-100">
-                        <HiClock size={14} />
-                        Drafted
-                      </p>
+                      <span className="flex items-center gap-1 bg-pink-900/80 text-pink-100 px-2 py-1 rounded-full font-semibold">
+                        <HiClock size={14} /> Drafted
+                      </span>
                     ) : (
-                      <p className="flex w-fit flex-row items-center gap-2 rounded-full bg-richblack-700 px-2 py-[2px] text-[12px] font-medium text-yellow-100">
-                        <div className="flex h-3 w-3 items-center justify-center rounded-full bg-yellow-100 text-richblack-700">
-                          <FaCheck size={8} />
-                        </div>
-                        Published
-                      </p>
+                      <span className="flex items-center gap-1 bg-yellow-900/80 text-yellow-100 px-2 py-1 rounded-full font-semibold">
+                        <FaCheck size={12} /> Published
+                      </span>
                     )}
                   </div>
-                </Td>
-                <Td className="text-sm font-medium text-richblack-100">
-                  2hr 30min
-                </Td>
-                <Td className="text-sm font-medium text-richblack-100">
-                  ₹{course.price}
-                </Td>
-                <Td className="text-sm font-medium text-richblack-100 ">
+                </div>
+                <div className="flex flex-wrap items-center gap-6 mt-4">
+                  <span className="flex items-center gap-1 text-cyan-300 font-semibold">
+                    <HiClock size={18} /> {course.totalDuration}
+                  </span>
+                  <span className="text-lg font-bold text-green-400">
+                    ₹{course.price}
+                  </span>
                   <button
                     disabled={loading}
-                    onClick={() => {
-                      navigate(`/dashboard/edit-course/${course._id}`)
-                    }}
+                    onClick={() => navigate(`/dashboard/edit-course/${course._id}`)}
                     title="Edit"
-                    className="px-2 transition-all duration-200 hover:scale-110 hover:text-caribbeangreen-300"
+                    className="ml-auto md:ml-0 flex items-center gap-1 px-3 py-2 rounded-lg bg-cyan-700/80 hover:bg-cyan-600 text-white font-semibold transition-colors duration-200 shadow-md"
                   >
-                    <FiEdit2 size={20} />
+                    <FiEdit2 size={18} />
                   </button>
                   <button
                     disabled={loading}
                     onClick={() => {
                       setConfirmationModal({
                         text1: "Do you want to delete this course?",
-                        text2:
-                          "All the data related to this course will be deleted",
+                        text2: "All the data related to this course will be deleted",
                         btn1Text: !loading ? "Delete" : "Loading...  ",
                         btn2Text: "Cancel",
                         btn1Handler: !loading
@@ -144,16 +113,16 @@ export default function CoursesTable({ courses, setCourses }) {
                       })
                     }}
                     title="Delete"
-                    className="px-1 transition-all duration-200 hover:scale-110 hover:text-[#ff0000]"
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-700/80 hover:bg-red-600 text-white font-semibold transition-colors duration-200 shadow-md"
                   >
-                    <RiDeleteBin6Line size={20} />
+                    <RiDeleteBin6Line size={18} />
                   </button>
-                </Td>
-              </Tr>
-            ))
-          )}
-        </Tbody>
-      </Table>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
       {confirmationModal && <ConfirmationModal modalData={confirmationModal} />}
     </>
   )

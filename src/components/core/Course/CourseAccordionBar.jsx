@@ -17,26 +17,24 @@ export default function CourseAccordionBar({ course, isActive, handleActive }) {
   }, [active])
 
   return (
-    <div className="overflow-hidden border border-solid border-richblack-600 bg-richblack-700 text-richblack-5 last:mb-0">
+    <div className="overflow-hidden last:mb-0 rounded-2xl border border-cyan-900/30 bg-white/10 backdrop-blur-xl shadow-xl transition-all">
       <div>
         <div
-          className={`flex cursor-pointer items-start justify-between bg-opacity-20 px-7  py-6 transition-[0.3s]`}
+          className={`flex cursor-pointer items-center justify-between px-7 py-6 transition-all rounded-2xl ${active ? "bg-cyan-900/30" : "bg-white/10 hover:bg-cyan-900/10"}`}
           onClick={() => {
             handleActive(course._id)
           }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 text-lg font-semibold text-white">
             <i
-              className={
-                isActive.includes(course._id) ? "rotate-180" : "rotate-0"
-              }
+              className={`transition-transform duration-300 ${active ? "rotate-180" : "rotate-0"}`}
             >
               <AiOutlineDown />
             </i>
-            <p>{course?.sectionName}</p>
+            <span>{course?.sectionName}</span>
           </div>
-          <div className="space-x-4">
-            <span className="text-yellow-25">
+          <div className="space-x-4 text-cyan-200 font-medium">
+            <span>
               {`${course.subSection.length || 0} lecture(s)`}
             </span>
           </div>
@@ -44,12 +42,12 @@ export default function CourseAccordionBar({ course, isActive, handleActive }) {
       </div>
       <div
         ref={contentEl}
-        className={`relative h-0 overflow-hidden bg-richblack-900 transition-[height] duration-[0.35s] ease-[ease]`}
+        className={`relative overflow-hidden transition-all duration-500 ease-in-out ${active ? "h-auto" : "h-0"}`}
         style={{
-          height: sectionHeight,
+          height: active ? sectionHeight : 0,
         }}
       >
-        <div className="text-textHead flex flex-col gap-2 px-7 py-6 font-semibold">
+        <div className="flex flex-col gap-2 px-7 py-6 font-semibold bg-cyan-900/40 backdrop-blur-xl rounded-b-2xl text-cyan-100 border-t border-cyan-900/20">
           {course?.subSection?.map((subSec, i) => {
             return <CourseSubSectionAccordion subSec={subSec} key={i} />
           })}

@@ -4,6 +4,7 @@ import { updateCompletedLectures } from "../../slices/viewCourseSlice"
 // import { setLoading } from "../../slices/profileSlice";
 import { apiConnector } from "../apiconnector"
 import { courseEndpoints } from "../apis"
+import { setCourse } from "../../slices/courseSlice"
 
 const {
   COURSE_DETAILS_API,
@@ -24,7 +25,7 @@ const {
   LECTURE_COMPLETION_API,
 } = courseEndpoints
 
-export const getAllCourses = async () => {
+export const getAllCourses = () => async (dispatch) => {
   const toastId = toast.loading("Loading...")
   let result = []
   try {
@@ -33,6 +34,7 @@ export const getAllCourses = async () => {
       throw new Error("Could Not Fetch Course Categories")
     }
     result = response?.data?.data
+    dispatch(setCourse(result))
   } catch (error) {
     console.log("GET_ALL_COURSE_API API ERROR............", error)
     toast.error(error.message)

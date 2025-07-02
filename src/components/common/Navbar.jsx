@@ -1,247 +1,286 @@
-import { useEffect, useState } from "react"
-import { AiOutlineMenu, AiOutlineShoppingCart } from "react-icons/ai"
-import { BsChevronDown } from "react-icons/bs"
-import { useSelector } from "react-redux"
-import { Link, matchPath, useLocation } from "react-router-dom"
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { 
+  Menu, 
+  X, 
+  Search, 
+  User, 
+  BookOpen, 
+  Home, 
+  Info, 
+  Phone, 
+  LogOut,
+  Settings,
+  ChevronDown
+} from 'lucide-react';
 
-import logo from "../../assets/Logo/Logo-Full-Light.png"
-import { NavbarLinks } from "../../data/navbar-links"
-import { apiConnector } from "../../services/apiconnector"
-import { categories } from "../../services/apis"
-import { ACCOUNT_TYPE } from "../../utils/constants"
-import ProfileDropdown from "../core/Auth/ProfileDropDown"
-import HighlightText from "../core/HomePage/HighlightText"
+// Components
+import ProfileDropDown from '../core/Auth/ProfileDropDown';
 
-function Navbar() {
-  const { token } = useSelector((state) => state.auth)
-  const { user } = useSelector((state) => state.profile)
-  const { totalItems } = useSelector((state) => state.cart)
-  const location = useLocation()
-
-  const [subLinks, setSubLinks] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false)
+const Navbar = () => {
+  const [toggle, setToggle] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const { token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.profile);
 
   useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      try {
-        const res = await apiConnector("GET", categories.CATEGORIES_API)
-        setSubLinks(res.data.data)
-      } catch (error) {
-        console.log("Could not fetch Categories.", error)
-      }
-      setLoading(false)
-    })()
-  }, [])
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  // console.log("sub links", subLinks)
+  const navLinks = [
+    {
+      title: "Home",
+      path: "/",
+      icon: Home
+    },
+    {
+      title: "Courses",
+      path: "/catalog",
+      icon: BookOpen
+    },
+    {
+      title: "About",
+      path: "/about",
+      icon: Info
+    },
+    {
+      title: "Contact",
+      path: "/contact",
+      icon: Phone
+    }
+  ];
 
-  const matchRoute = (route) => {
-    return matchPath({ path: route }, location.pathname)
-  }
+  const containerVariants = {
+    hidden: { opacity: 0, y: -50 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: -20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4, ease: "easeOut" }
+    }
+  };
+
+  // Map routes to their background classes
+  const routeBgMap = {
+    '/': 'bg-gradient-to-br from-richblack-900 via-cyan-900 to-richblack-800',
+    '/about': 'bg-gradient-to-br from-emerald-900 via-teal-700 to-green-900',
+    '/catalog': 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900',
+    '/contact': 'bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-800',
+    '/login': 'bg-gradient-to-br from-richblack-900 via-purple-900 to-richblack-800',
+    '/signup': 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900',
+    '/dashboard': 'bg-gradient-to-br from-neutral-50 via-white to-primary-50',
+    '/dashboard/my-profile': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
+    '/dashboard/enrolled-courses': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
+    '/dashboard/cart': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
+    '/forgot-password': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
+    '/update-password': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
+    // Add more routes as needed
+  };
+  const currentBg = routeBgMap[location.pathname] || 'bg-gradient-to-br from-richblack-900 via-cyan-900 to-richblack-800';
 
   return (
-    <div
-      className={`flex h-14 items-center justify-center border-b-[1px] border-b-richblack-700 ${
-        location.pathname !== "/" ? "bg-richblack-800" : ""
-      } transition-all duration-200`}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? 'glass backdrop-blur-md border-b border-white/10'
+          : currentBg
+      }`}
     >
-      <div className="flex w-11/12 max-w-maxContent items-center justify-between">
-        {/* Logo */}
-        <Link to="/">
-          <div className="text-2xl font-bold text-white">
-            <HighlightText text="VIDYARTHI HUB" />
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl lg:text-2xl font-display font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+                  VidyarthiHub
+                </h1>
+                <p className="text-xs text-white/60 -mt-1">Learn • Grow • Succeed</p>
+              </div>
+            </Link>
           </div>
-        </Link>
-        {/* Navigation links */}
-        <nav className="hidden md:block">
-          <ul className="flex gap-x-6 text-richblack-25">
-            {NavbarLinks.map((link, index) => (
-              <li key={index}>
-                {link.title === "Catalog" ? (
-                  <>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-8">
+            {navLinks.map((link, index) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path;
+              
+              return (
+                <Link
+                  key={link.title}
+                  to={link.path}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 group relative ${
+                    isActive 
+                      ? 'text-white bg-white/10' 
+                      : 'text-white/80 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-medium">{link.title}</span>
+                  {isActive && (
                     <div
-                      className={`group relative flex items-center gap-1 ${
-                        matchRoute("/catalog") || matchRoute("/catalog/:catalogName")
-                          ? "text-yellow-25"
-                          : "text-richblack-25"
-                      }`}
-                    >
-                      <Link to="/catalog" className="flex items-center gap-1 cursor-pointer">
-                        <span>{link.title}</span>
-                        <BsChevronDown />
-                      </Link>
-                      <div className="invisible absolute left-[50%] top-[50%] z-[1000] flex w-[200px] translate-x-[-50%] translate-y-[3em] flex-col rounded-lg bg-richblack-5 p-4 text-richblack-900 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-[1.65em] group-hover:opacity-100 lg:w-[300px]">
-                        <div className="absolute left-[50%] top-0 -z-10 h-6 w-6 translate-x-[80%] translate-y-[-40%] rotate-45 select-none rounded bg-richblack-5"></div>
-                        {loading ? (
-                          <p className="text-center">Loading...</p>
-                        ) : (subLinks && subLinks.length) ? (
-                          <>
-                            {subLinks
-                              ?.filter(
-                                (subLink) => subLink?.courses?.length > 0
-                              )
-                              ?.map((subLink, i) => (
-                                <Link
-                                  to={`/catalog/${subLink.name
-                                    .split(" ")
-                                    .join("-")
-                                    .toLowerCase()}`}
-                                  className="rounded-lg bg-transparent py-4 pl-4 hover:bg-richblack-50"
-                                  key={i}
-                                >
-                                  <p>{subLink.name}</p>
-                                </Link>
-                              ))}
-                          </>
-                        ) : (
-                          <p className="text-center">No Courses Found</p>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <Link to={link?.path}>
-                    <p
-                      className={`${
-                        matchRoute(link?.path)
-                          ? "text-yellow-25"
-                          : "text-richblack-25"
-                      }`}
-                    >
-                      {link.title}
-                    </p>
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </nav>
-        {/* Login / Signup / Dashboard */}
-        <div className="hidden items-center gap-x-4 md:flex">
-          {user && user?.accountType !== ACCOUNT_TYPE.INSTRUCTOR && (
-            <Link to="/dashboard/cart" className="relative">
-              <AiOutlineShoppingCart className="text-2xl text-richblack-100" />
-              {totalItems > 0 && (
-                <span className="absolute -bottom-2 -right-2 grid h-5 w-5 place-items-center overflow-hidden rounded-full bg-richblack-600 text-center text-xs font-bold text-yellow-100">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-          )}
-          {token === null && (
-            <Link to="/login">
-              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">
-                Log in
-              </button>
-            </Link>
-          )}
-          {token === null && (
-            <Link to="/signup">
-              <button className="rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">
-                Sign up
-              </button>
-            </Link>
-          )}
-          {token !== null && <ProfileDropdown />}
-        </div>
-        {/* Mobile menu icon */}
-        <button className="mr-4 md:hidden" onClick={() => setMobileMenuOpen((prev) => !prev)}>
-          <AiOutlineMenu fontSize={24} fill="#AFB2BF" />
-        </button>
-      </div>
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-richblack-900 z-50 flex flex-col md:hidden border-b border-richblack-700 animate-slideDown">
-          <ul className="flex flex-col gap-4 p-4">
-            {NavbarLinks.map((link, index) => (
-              <li key={index}>
-                {link.title === "Catalog" ? (
-                  <>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 w-full text-left text-richblack-25"
-                      onClick={() => setMobileCatalogOpen((prev) => !prev)}
-                    >
-                      <span>{link.title}</span>
-                      <BsChevronDown className={`transition-transform ${mobileCatalogOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {mobileCatalogOpen && (
-                      <ul className="ml-4 mt-2 flex flex-col gap-2 bg-richblack-800 rounded-lg p-2">
-                        {loading ? (
-                          <li className="text-richblack-200">Loading...</li>
-                        ) : (subLinks && subLinks.length) ? (
-                          subLinks.filter(subLink => subLink?.courses?.length > 0).map((subLink, i) => (
-                            <li key={i}>
-                              <Link
-                                to={`/catalog/${subLink.name.split(" ").join("-").toLowerCase()}`}
-                                className="block py-1 px-2 rounded hover:bg-richblack-700 text-richblack-25"
-                                onClick={() => { setMobileMenuOpen(false); setMobileCatalogOpen(false); }}
-                              >
-                                {subLink.name}
-                              </Link>
-                            </li>
-                          ))
-                        ) : (
-                          <li className="text-richblack-200">No Courses Found</li>
-                        )}
-                      </ul>
-                    )}
-                  </>
-                ) : (
-                  <Link to={link?.path} onClick={() => setMobileMenuOpen(false)}>
-                    <p className={`${matchRoute(link?.path) ? "text-yellow-25" : "text-richblack-25"}`}>{link.title}</p>
-                  </Link>
-                )}
-              </li>
-            ))}
-            {/* Add Dashboard link for mobile if logged in */}
-            {token !== null && (
-              <li>
-                <Link to="/dashboard/my-profile" onClick={() => setMobileMenuOpen(false)}>
-                  <p className="text-richblack-25">Dashboard</p>
-                </Link>
-              </li>
-            )}
-            {/* Auth/Cart/Profile for mobile */}
-            {user && user?.accountType !== ACCOUNT_TYPE.INSTRUCTOR && (
-              <li>
-                <Link to="/dashboard/cart" onClick={() => setMobileMenuOpen(false)} className="relative flex items-center">
-                  <AiOutlineShoppingCart className="text-2xl text-richblack-100" />
-                  {totalItems > 0 && (
-                    <span className="ml-1 grid h-5 w-5 place-items-center overflow-hidden rounded-full bg-richblack-600 text-center text-xs font-bold text-yellow-100">
-                      {totalItems}
-                    </span>
+                      className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full border border-white/20"
+                    />
                   )}
                 </Link>
-              </li>
-            )}
-            {token === null && (
-              <li>
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">Log in</button>
-                </Link>
-              </li>
-            )}
-            {token === null && (
-              <li>
-                <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full rounded-[8px] border border-richblack-700 bg-richblack-800 px-[12px] py-[8px] text-richblack-100">Sign up</button>
-                </Link>
-              </li>
-            )}
-            {token !== null && (
-              <li>
-                <ProfileDropdown mobileCloseMenu={() => setMobileMenuOpen(false)} />
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
+              );
+            })}
+          </div>
 
-export default Navbar
+          {/* Search Bar */}
+          <div className="hidden lg:flex items-center space-x-4">
+            {showSearch && (
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-white/60 focus:outline-none focus:border-white/40 transition-all"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/60" />
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300"
+            >
+              <Search className="w-5 h-5 text-white" />
+            </button>
+          </div>
+
+          {/* Auth Buttons / Profile */}
+          <div className="flex items-center space-x-4">
+            {token === null ? (
+              <>
+                <Link to="/login">
+                  <button
+                    className="hidden sm:block px-6 py-2 text-white/80 hover:text-white transition-colors"
+                  >
+                    Login
+                  </button>
+                </Link>
+                <Link to="/signup">
+                  <button
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:shadow-neon transition-all duration-300"
+                  >
+                    Sign Up
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link to="/dashboard/my-profile">
+                  <button
+                    className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-300"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-white">Dashboard</span>
+                  </button>
+                </Link>
+                <ProfileDropDown />
+              </div>
+            )}
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setToggle(!toggle)}
+              className="lg:hidden p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300"
+            >
+              {toggle ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {toggle && (
+          <div className="lg:hidden glass rounded-2xl mt-4 mb-4 overflow-hidden">
+            <div className="p-6 space-y-4">
+              {/* Mobile Search */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-white/60 focus:outline-none focus:border-white/40"
+                />
+                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
+              </div>
+
+              {/* Mobile Navigation Links */}
+              <div className="space-y-2">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = location.pathname === link.path;
+                  
+                  return (
+                    <Link
+                      key={link.title}
+                      to={link.path}
+                      onClick={() => setToggle(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                        isActive 
+                          ? 'bg-white/10 text-white' 
+                          : 'text-white/80 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{link.title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Auth Buttons */}
+              {token === null ? (
+                <div className="pt-4 space-y-3">
+                  <Link to="/login" onClick={() => setToggle(false)}>
+                    <button className="w-full px-4 py-3 text-white/80 hover:text-white transition-colors text-left">
+                      Login
+                    </button>
+                  </Link>
+                  <Link to="/signup" onClick={() => setToggle(false)}>
+                    <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-3 rounded-xl font-semibold hover:shadow-neon transition-all duration-300">
+                      Sign Up
+                    </button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="pt-4 space-y-3">
+                  <Link to="/dashboard" onClick={() => setToggle(false)}>
+                    <button className="w-full flex items-center space-x-3 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300">
+                      <User className="w-5 h-5" />
+                      <span className="text-white">Dashboard</span>
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;

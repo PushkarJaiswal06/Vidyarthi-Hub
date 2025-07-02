@@ -460,15 +460,45 @@ exports.getInstructorCourses = async (req, res) => {
     // Get the instructor ID from the authenticated user or request body
     const instructorId = req.user.id
 
-    // Find all courses belonging to the instructor
+    // Find all courses belonging to the instructor, and populate courseContent > subSection
     const instructorCourses = await Course.find({
       instructor: instructorId,
-    }).sort({ createdAt: -1 })
+    })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "courseContent",
+        populate: {
+          path: "subSection",
+        },
+      })
+      .populate({
+        path: "studentsEnrolled",
+        select: "firstName lastName email _id",
+      })
 
-    // Return the instructor's courses
+    // For each course, calculate totalDuration
+    const coursesWithDuration = instructorCourses.map((course) => {
+      let totalDurationInSeconds = 0
+      course.courseContent.forEach((content) => {
+        content.subSection.forEach((subSection) => {
+          const timeDurationInSeconds = parseInt(subSection.timeDuration)
+          if (!isNaN(timeDurationInSeconds)) {
+            totalDurationInSeconds += timeDurationInSeconds
+          }
+        })
+      })
+      // Add totalDuration as a string (e.g., '2h 30m')
+      const totalDuration = convertSecondsToDuration(totalDurationInSeconds)
+      // Convert to plain object and add totalDuration
+      const courseObj = course.toObject()
+      courseObj.totalDuration = totalDuration
+      return courseObj
+    })
+
+    // Return the instructor's courses with totalDuration
     res.status(200).json({
       success: true,
-      data: instructorCourses,
+      data: coursesWithDuration,
     })
   } catch (error) {
     console.error(error)

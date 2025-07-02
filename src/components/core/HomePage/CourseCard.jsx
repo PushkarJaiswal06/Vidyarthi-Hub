@@ -1,81 +1,112 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { FaStar, FaUsers, FaClock, FaPlay } from "react-icons/fa";
 
-// Importing React Icons
-import { HiUsers } from "react-icons/hi";
-import { ImTree } from "react-icons/im";
-import { FaUser, FaRupeeSign } from "react-icons/fa";
+const CourseCard = ({ cardData, currentCard, setCurrentCard }) => {
+  // Handle the cardData structure from ExploreMore component
+  const {
+    heading,
+    description,
+    level,
+    lessionNumber,
+    courseId,
+    thumbnail,
+    price,
+    instructor
+  } = cardData || {};
 
-const CourseCard = ({cardData, currentCard, setCurrentCard}) => {
   // Function to truncate description to max 15 words
   const truncateDescription = (description) => {
     if (!description) return "";
-    const words = description.split(' ');
+    const words = description.split(" ");
     if (words.length <= 15) return description;
-    return words.slice(0, 15).join(' ') + '...';
+    return words.slice(0, 15).join(" ") + "...";
   };
 
   return (
-    <div
-      className={`w-[360px] lg:w-[30%] h-[300px] box-border cursor-pointer relative overflow-hidden ${
-        currentCard === cardData?.heading
-          ? "ring-2 ring-yellow-50 ring-offset-2 ring-offset-richblack-800"
-          : ""
-      }`}
-      onClick={() => setCurrentCard(cardData?.heading)}
-    >
-      {/* Background Image */}
-      {cardData?.thumbnail && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${cardData.thumbnail})` }}
-        />
-      )}
-      
-      {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-40" />
-      
-      {/* Content Overlay */}
-      <div className="relative z-10 h-full flex flex-col">
-        <div className="border-b-[2px] border-white border-opacity-30 border-dashed h-[70%] p-6 flex flex-col gap-3">
-          <div className="font-semibold text-[20px] line-clamp-2 text-white">
-            {cardData?.heading}
+    <div className="relative group">
+      <div 
+        className={`card-modern h-full overflow-hidden transform transition-all duration-500 hover:scale-105 cursor-pointer ${
+          currentCard === heading ? "ring-2 ring-primary-500 shadow-glow" : ""
+        }`}
+        onClick={() => setCurrentCard(heading)}
+      >
+        {/* Course Thumbnail */}
+        <div className="relative overflow-hidden">
+          <img
+            src={thumbnail || "https://via.placeholder.com/300x200?text=Course+Image"}
+            alt={heading}
+            className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full">
+                <FaPlay className="w-5 h-5 text-white" />
+              </div>
+            </div>
           </div>
 
-          <div className="text-white text-sm line-clamp-3 opacity-90">
-            {truncateDescription(cardData?.description)}
+          {/* Price Badge */}
+          <div className="absolute top-4 right-4">
+            <div className="badge-modern">
+              ₹{price || "Free"}
+            </div>
+          </div>
+
+          {/* Level Badge */}
+          <div className="absolute top-4 left-4">
+            <div className="px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg">
+              <span className="text-xs font-semibold text-neutral-800">
+                {level}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-white px-6 py-3 font-medium text-sm">
+        {/* Course Content */}
+        <div className="p-6">
+          {/* Course Title */}
+          <h3 className="text-xl font-bold text-neutral-900 mb-3 line-clamp-2 group-hover:text-primary-600 transition-colors duration-200">
+            {heading}
+          </h3>
+
+          {/* Course Description */}
+          <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
+            {truncateDescription(description)}
+          </p>
+
           {/* Instructor */}
-          <div className="flex items-center gap-2">
-            <FaUser className="text-xs" />
-            <p className="truncate max-w-[120px]">
-              {cardData?.instructor?.firstName} {cardData?.instructor?.lastName}
-            </p>
-          </div>
+          {instructor && (
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="avatar-modern w-8 h-8 text-sm">
+                {instructor?.firstName?.charAt(0) || "I"}
+              </div>
+              <div>
+                <div className="text-sm font-medium text-neutral-900">
+                  {instructor?.firstName} {instructor?.lastName}
+                </div>
+                <div className="text-xs text-neutral-500">Instructor</div>
+              </div>
+            </div>
+          )}
 
-          {/* Price */}
-          <div className="flex items-center gap-1">
-            <FaRupeeSign className="text-xs" />
-            <p>{cardData?.price || 0}</p>
+          {/* Course Stats */}
+          <div className="flex items-center justify-between text-sm text-neutral-500">
+            <div className="flex items-center space-x-1">
+              <FaClock className="w-4 h-4" />
+              <span>{lessionNumber || 0} lessons</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <FaUsers className="w-4 h-4" />
+              <span>All Levels</span>
+            </div>
           </div>
         </div>
 
-        {/* Bottom section with level and lessons */}
-        <div className="flex justify-between text-white px-6 py-2 font-medium text-xs border-t border-white border-opacity-30">
-          {/* Level */}
-          <div className="flex items-center gap-2">
-            <HiUsers />
-            <p>{cardData?.level}</p>
-          </div>
-
-          {/* Flow Chart */}
-          <div className="flex items-center gap-2">
-            <ImTree />
-            <p>{cardData?.lessionNumber} Lessons</p>
-          </div>
-        </div>
+        {/* Hover Effect Border */}
+        <div className="absolute inset-0 border-2 border-transparent rounded-2xl group-hover:border-primary-500/20 transition-all duration-300 pointer-events-none"></div>
       </div>
     </div>
   );

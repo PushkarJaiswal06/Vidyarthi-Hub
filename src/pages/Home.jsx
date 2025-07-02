@@ -1,201 +1,422 @@
-// Icons Import
-import { FaArrowRight } from "react-icons/fa"
-import { Link } from "react-router-dom"
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { 
+  Users, 
+  BookOpen, 
+  Award, 
+  Play, 
+  Star, 
+  ArrowRight,
+  Globe,
+  Zap,
+  Target,
+  TrendingUp
+} from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { getAllCourses } from '../services/operations/courseDetailsAPI';
 
-// Image and Video Import
-import Banner from "../assets/Images/banner.mp4"
-// Component Imports
-import Footer from "../components/common/Footer"
-import ReviewSlider from "../components/common/ReviewSlider"
-import CTAButton from "../components/core/HomePage/Button"
-import CodeBlocks from "../components/core/HomePage/CodeBlocks"
-import ExploreMore from "../components/core/HomePage/ExploreMore"
-import HighlightText from "../components/core/HomePage/HighlightText"
-import InstructorSection from "../components/core/HomePage/InstructorSection"
-import LearningLanguageSection from "../components/core/HomePage/LearningLanguageSection"
-import TimelineSection from "../components/core/HomePage/TimelineSection"
+// Components
+import Hero3D from '../components/core/HomePage/Hero3D';
+import AnimatedHeading from '../components/common/AnimatedHeading';
+import { 
+  AnimatedLines, 
+  FloatingShapes, 
+  AnimatedGrid, 
+  AnimatedDots,
+  SectionDivider 
+} from '../components/common/SVGDecorations';
+import CourseCard from '../components/core/Catalog/Course_Card';
 
-function Home() {
+// API
+import { apiConnector } from '../services/apiconnector';
+import { courseEndpoints } from '../services/apis';
+
+const Home = () => {
+  const dispatch = useDispatch();
+  const { course: courses, loading } = useSelector((state) => state.course);
+  const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [fetchError, setFetchError] = useState(null);
+  const [stats, setStats] = useState({
+    students: 0,
+    courses: 0,
+    instructors: 0,
+    satisfaction: 0
+  });
+
+  useEffect(() => {
+    dispatch(getAllCourses());
+  }, [dispatch]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  // Helper to get 3 random courses
+  function getRandomCourses(arr, n = 3) {
+    if (!arr || arr.length <= n) return arr;
+    const shuffled = arr.slice().sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, n);
+  }
+
+  useEffect(() => {
+    if (!loading && courses && courses.length > 0) {
+      setFeaturedCourses(getRandomCourses(courses, 3));
+      setFetchError(null);
+      // Calculate stats from courses data
+      const totalStudents = courses.reduce((sum, course) => sum + (course.studentsEnrolled?.length || 0), 0);
+      const totalInstructors = new Set(courses.map(course => course.instructor?._id)).size;
+      const avgRating = courses.reduce((sum, course) => {
+        const ratings = course.ratingAndReviews || [];
+        const avg = ratings.length > 0 ? ratings.reduce((rSum, r) => rSum + r.rating, 0) / ratings.length : 0;
+        return sum + avg;
+      }, 0) / courses.length;
+      setStats({
+        students: totalStudents,
+        courses: courses.length,
+        instructors: totalInstructors,
+        satisfaction: Math.round(avgRating * 20)
+      });
+    }
+    // Only show error if not loading and no courses
+    else if (!loading && (!courses || courses.length === 0)) {
+      setFeaturedCourses([]);
+      setFetchError('No featured courses available right now.');
+      setStats({ students: 0, courses: 0, instructors: 0, satisfaction: 0 });
+    }
+  }, [loading, courses]);
+
   return (
-    <div>
-      {/* Section 1 */}
-      <div className="relative mx-auto flex w-11/12 max-w-maxContent flex-col items-center justify-between gap-8 text-white">
-        {/* Become a Instructor Button */}
-        <Link to={"/signup"}>
-          <div className="group mx-auto mt-16 w-fit rounded-full bg-richblack-800 p-1 font-bold text-richblack-200 drop-shadow-[0_1.5px_rgba(255,255,255,0.25)] transition-all duration-200 hover:scale-95 hover:drop-shadow-none">
-            <div className="flex flex-row items-center gap-2 rounded-full px-10 py-[5px] transition-all duration-200 group-hover:bg-richblack-900">
-              <p>Become an Instructor</p>
-              <FaArrowRight />
-            </div>
-          </div>
-        </Link>
-
-        {/* Heading */}
-        <div className="text-center text-4xl font-semibold">
-          Empower Your Future with
-          <HighlightText text={"Quality Education"} />
-        </div>
-
-        {/* Sub Heading */}
-        <div className="-mt-3 w-[90%] text-center text-lg font-bold text-richblack-300">
-          With our online courses, you can learn at your own pace, from
-          anywhere in the world, and get access to a wealth of resources,
-          including hands-on projects, quizzes, and personalized feedback from
-          instructors.
-        </div>
-
-        {/* CTA Buttons */}
-        <div className="mt-8 flex flex-row gap-7">
-          <CTAButton active={true} linkto={"/signup"}>
-            Signup
-          </CTAButton>
-          <CTAButton active={false} linkto={"/login"}>
-            Login
-          </CTAButton>
-        </div>
-
-        {/* Video */}
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <div
-            className="mx-3 my-3 shadow-[10px_-5px_50px_-5px] shadow-blue-200 h-40 md:h-56 flex items-center justify-center"
+    <div className="min-h-screen bg-gradient-to-br from-richblack-900 via-cyan-900 to-richblack-800 relative overflow-hidden">
+      {/* Background Decorations */}
+      <AnimatedGrid className="opacity-5" />
+      <FloatingShapes />
+      <AnimatedDots />
+      
+      {/* Hero Section */}
+      <section className="relative pt-20  px-4 lg:px-8">
+        <div className=" mx-auto">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col md:flex-row items-center justify-between gap-8"
           >
-            <video
-              className="shadow-[0_0_40px_0_rgba(59,130,246,0.4)] h-40 md:h-56 object-cover"
-              muted
-              loop
-              autoPlay
-            >
-              <source src={Banner} type="video/mp4" />
-            </video>
-          </div>
-        </div>
-
-        {/* Code Section 1  */}
-        <div>
-          <CodeBlocks
-            position={"lg:flex-row"}
-            heading={
-              <div className="text-4xl font-semibold">
-                Unlock your
-                <HighlightText text={"learning potential"} /> with our online
-                courses.
-              </div>
-            }
-            subheading={
-              "Our courses are designed and taught by industry experts who have years of experience and are passionate about sharing their knowledge with you."
-            }
-            ctabtn1={{
-              btnText: "Try it Yourself",
-              link: "/signup",
-              active: true,
-            }}
-            ctabtn2={{
-              btnText: "Learn More",
-              link: "/signup",
-              active: false,
-            }}
-            codeColor={"text-yellow-25"}
-            codeblock={`<!DOCTYPE html>\n <html lang="en">\n<head>\n<title>This is myPage</title>\n</head>\n<body>\n<h1><a href="/">Header</a></h1>\n<nav> <a href="/one">One</a> <a href="/two">Two</a> <a href="/three">Three</a>\n</nav>\n</body>`}
-            backgroundGradient={<div className="codeblock1 absolute"></div>}
-          />
-        </div>
-
-        {/* Code Section 2 */}
-        <div>
-          <CodeBlocks
-            position={"lg:flex-row-reverse"}
-            heading={
-              <div className="w-[100%] text-4xl font-semibold lg:w-[50%]">
-                Start
-                <HighlightText text={"learning in seconds"} />
-              </div>
-            }
-            subheading={
-              "Go ahead, give it a try. Our hands-on learning environment means you'll be actively engaged from your very first lesson."
-            }
-            ctabtn1={{
-              btnText: "Continue Lesson",
-              link: "/signup",
-              active: true,
-            }}
-            ctabtn2={{
-              btnText: "Learn More",
-              link: "/signup",
-              active: false,
-            }}
-            codeColor={"text-white"}
-            codeblock={`import React from "react";\n import CTAButton from "./Button";\nimport TypeAnimation from "react-type";\nimport { FaArrowRight } from "react-icons/fa";\n\nconst Home = () => {\nreturn (\n<div>Home</div>\n)\n}\nexport default Home;`}
-            backgroundGradient={<div className="codeblock2 absolute"></div>}
-          />
-        </div>
-
-        {/* Explore Section */}
-        <ExploreMore />
-      </div>
-
-      {/* Section 2 */}
-      <div className="bg-pure-greys-5 text-richblack-700">
-        <div className="homepage_bg h-[320px]">
-          {/* Explore Full Catagory Section */}
-          <div className="mx-auto flex w-11/12 max-w-maxContent flex-col items-center justify-between gap-8">
-            <div className="lg:h-[150px]"></div>
-            <div className="flex flex-row gap-7 text-white lg:mt-8">
-              <CTAButton active={true} linkto={"/catalog"}>
-                <div className="flex items-center gap-2">
-                  Explore Full Catalog
-                  <FaArrowRight />
-                </div>
-              </CTAButton>
-              <CTAButton active={false} linkto={"/login"}>
-                Learn More
-              </CTAButton>
+            {/* Left: Hero text/buttons (70%) */}
+            <div className="flex-[7] text-center md:text-left mb-8 md:mb-0">
+              <motion.div variants={itemVariants} className="mb-8">
+                <AnimatedHeading 
+                  size="2xl" 
+                  strokeColor="#4facfe"
+                  className="mb-6"
+                >
+                  Transform Your Future
+                </AnimatedHeading>
+                <p className="text-xl lg:text-2xl text-white/80 max-w-3xl mx-auto md:mx-0 leading-relaxed">
+                  Empowering learners worldwide with cutting-edge education technology. Transform your future with our comprehensive learning platform.
+                </p>
+              </motion.div>
+              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center">
+                <Link to="/catalog">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg shadow-neon flex items-center gap-2 group"
+                  >
+                    Explore Courses
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </motion.button>
+                </Link>
+                <Link to="/about">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="glass text-white px-8 py-4 rounded-full font-semibold text-lg border border-white/20 hover:border-white/40 transition-all"
+                  >
+                    Learn More
+                  </motion.button>
+                </Link>
+              </motion.div>
             </div>
-          </div>
-        </div>
-
-        <div className="mx-auto flex w-11/12 max-w-maxContent flex-col items-center justify-between gap-8 ">
-          {/* Job that is in Demand - Section 1 */}
-          <div className="mb-10 mt-[-100px] flex flex-col justify-between gap-7 lg:mt-20 lg:flex-row lg:gap-0">
-            <div className="text-4xl font-semibold lg:w-[45%] ">
-              Get the skills you need for a{" "}
-              <HighlightText text={"successful career."} />
+            {/* Right: 3D Model (30%) */}
+            <div className="flex-[3] flex justify-center items-center">
+              <Hero3D />
             </div>
-            <div className="flex flex-col items-start gap-10 lg:w-[40%]">
-              <div className="text-[16px]">
-                The modern VidyarthiHub platform empowers learners to take control of their education. Today, to
-                be competitive in any field requires continuous learning and skill development. Our platform provides
-                the tools and resources you need to stay ahead in your career.
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative py-20 px-4 lg:px-8">
+        <SectionDivider color="#4facfe" />
+        <div className=" mx-auto">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+          >
+            <motion.div variants={itemVariants} className="text-center">
+              <div className="glass rounded-2xl p-6 hover:shadow-neon transition-all duration-300">
+                <Users className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  {loading ? "..." : stats.students.toLocaleString()}+
+                </h3>
+                <p className="text-white/70">Active Students</p>
               </div>
-              <CTAButton active={true} linkto={"/signup"}>
-                <div className="">Learn More</div>
-              </CTAButton>
-            </div>
-          </div>
-
-          {/* Timeline Section - Section 2 */}
-          <TimelineSection />
-
-          {/* Learning Language Section - Section 3 */}
-          <LearningLanguageSection />
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="text-center">
+              <div className="glass rounded-2xl p-6 hover:shadow-neon transition-all duration-300">
+                <BookOpen className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  {loading ? "..." : stats.courses}+
+                </h3>
+                <p className="text-white/70">Premium Courses</p>
+              </div>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="text-center">
+              <div className="glass rounded-2xl p-6 hover:shadow-neon transition-all duration-300">
+                <Award className="w-12 h-12 text-pink-400 mx-auto mb-4" />
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  {loading ? "..." : stats.instructors}+
+                </h3>
+                <p className="text-white/70">Expert Instructors</p>
+              </div>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="text-center">
+              <div className="glass rounded-2xl p-6 hover:shadow-neon transition-all duration-300">
+                <Star className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  {loading ? "..." : stats.satisfaction}%
+                </h3>
+                <p className="text-white/70">Satisfaction Rate</p>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Section 3 */}
-      <div className="relative mx-auto my-20 flex w-11/12 max-w-maxContent flex-col items-center justify-between gap-8 bg-richblack-900 text-white">
-        {/* Become a instructor section */}
-        <InstructorSection />
+      {/* Featured Courses Section */}
+      <section className="relative py-20 px-4 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div variants={itemVariants}>
+              <AnimatedHeading 
+                size="xl" 
+                strokeColor="#f093fb"
+                className="mb-6"
+              >
+                Featured Courses
+              </AnimatedHeading>
+              <p className="text-xl text-white/80 max-w-2xl mx-auto">
+                Discover our most popular courses handpicked by industry experts
+              </p>
+            </motion.div>
+          </motion.div>
 
-        {/* Reviws from Other Learner */}
-        <h1 className="text-center text-4xl font-semibold mt-8">
-          Reviews from other learners
-        </h1>
-        <ReviewSlider />
-      </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            {loading ? (
+              <div className="col-span-full flex justify-center items-center py-12">
+                <div className="spinner" />
+              </div>
+            ) : !loading && featuredCourses.length === 0 ? (
+              <div className="col-span-full text-white/70 text-lg text-center py-12">
+                {fetchError}
+              </div>
+            ) : (
+              featuredCourses.map((course, index) => (
+                <motion.div
+                  key={course._id}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <CourseCard course={course} />
+                </motion.div>
+              ))
+            )}
+          </motion.div>
 
-      {/* Footer */}
-      <Footer />
+          <motion.div
+            variants={itemVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <Link to="/catalog">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-full font-semibold text-lg shadow-neon-pink flex items-center gap-2 mx-auto group"
+              >
+                View All Courses
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="relative py-20 px-4 lg:px-8">
+        <SectionDivider color="#f093fb" />
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <motion.div variants={itemVariants}>
+              <AnimatedHeading 
+                size="xl" 
+                strokeColor="#2A9D8F"
+                className="mb-6"
+              >
+                Why Choose VidyarthiHub?
+              </AnimatedHeading>
+            </motion.div>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <Globe className="w-12 h-12 text-blue-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Global Learning</h3>
+              <p className="text-white/70 leading-relaxed">
+                Access world-class education from anywhere in the world with our comprehensive online platform.
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <Zap className="w-12 h-12 text-yellow-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Interactive Experience</h3>
+              <p className="text-white/70 leading-relaxed">
+                Engage with 3D learning environments and interactive content that makes learning fun and effective.
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <Target className="w-12 h-12 text-pink-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Personalized Learning</h3>
+              <p className="text-white/70 leading-relaxed">
+                AI-driven recommendations and adaptive learning paths tailored to your individual needs.
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <TrendingUp className="w-12 h-12 text-green-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Career Growth</h3>
+              <p className="text-white/70 leading-relaxed">
+                Industry-relevant courses designed to accelerate your career and open new opportunities.
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <Users className="w-12 h-12 text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Expert Community</h3>
+              <p className="text-white/70 leading-relaxed">
+                Connect with industry experts and fellow learners in our vibrant community.
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="glass rounded-2xl p-8 hover:shadow-neon transition-all duration-300">
+              <Play className="w-12 h-12 text-red-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Flexible Learning</h3>
+              <p className="text-white/70 leading-relaxed">
+                Learn at your own pace with 24/7 access to course materials and lifetime updates.
+              </p>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative py-20 px-4 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <motion.div variants={itemVariants} className="mb-8">
+              <AnimatedHeading 
+                size="xl" 
+                strokeColor="#FFD70A"
+                className="mb-6"
+              >
+                Ready to Start Your Journey?
+              </AnimatedHeading>
+              <p className="text-xl text-white/80 mb-8">
+                Join thousands of learners who have transformed their careers with VidyarthiHub
+              </p>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link to="/signup">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gradient-to-r from-yellow-400 to-orange-500 text-richblack-900 px-8 py-4 rounded-full font-bold text-lg shadow-neon flex items-center gap-2 group"
+                >
+                  Get Started Free
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              </Link>
+              <Link to="/contact">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="glass text-white px-8 py-4 rounded-full font-semibold text-lg border border-white/20 hover:border-white/40 transition-all"
+                >
+                  Contact Us
+                </motion.button>
+              </Link>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

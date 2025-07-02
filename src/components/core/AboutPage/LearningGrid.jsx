@@ -1,6 +1,15 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { 
+  Globe, 
+  BookOpen, 
+  GraduationCap, 
+  Award, 
+  Star, 
+  Users,
+  ArrowRight
+} from "lucide-react";
 import HighlightText from "../../../components/core/HomePage/HighlightText";
-import CTAButton from "../../../components/core/HomePage/Button";
 
 const learningGridArray = [
   {
@@ -10,36 +19,41 @@ const learningGridArray = [
       "VidyarthiHub partners with more than 275+ leading universities and companies to bring flexible, affordable, job-relevant online learning to individuals and organizations worldwide.",
     BtnText: "Learn More",
     BtnLink: "/",
+    icon: Globe,
+    color: "text-purple-400"
   },
   {
     order: 1,
     heading: "Curriculum Based on Industry Needs",
     description:
       "Save time and money! The VidyarthiHub curriculum is made to be easier to understand and in line with industry needs.",
+    icon: BookOpen,
+    color: "text-blue-400"
   },
   {
     order: 2,
     heading: "Our Learning Methods",
     description:
       "VidyarthiHub partners with more than 275+ leading universities and companies to bring innovative learning methods to you.",
+    icon: GraduationCap,
+    color: "text-pink-400"
   },
   {
     order: 3,
     heading: "Certification",
     description:
       "VidyarthiHub partners with more than 275+ leading universities and companies to bring recognized certifications to learners.",
+    icon: Award,
+    color: "text-yellow-400"
   },
+  
   {
     order: 4,
-    heading: `Rating "Auto-grading"`,
-    description:
-      "VidyarthiHub partners with more than 275+ leading universities and companies to bring advanced auto-grading and rating systems.",
-  },
-  {
-    order: 5,
     heading: "Ready to Work",
     description:
       "VidyarthiHub partners with more than 275+ leading universities and companies to bring job-ready skills to learners.",
+    icon: Users,
+    color: "text-orange-400"
   },
 ];
 
@@ -51,50 +65,69 @@ function highlightVidyarthiHub(text) {
 }
 
 const LearningGrid = () => {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 50, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
   return (
-    <div className="grid mx-auto w-[350px] xl:w-fit grid-cols-1 xl:grid-cols-4 mb-12">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+    >
       {learningGridArray.map((card, i) => {
+        const IconComponent = card.icon;
         return (
-          <div
+          <motion.div
             key={i}
-            className={`${i === 0 && "xl:col-span-2 xl:h-[294px]"}  ${
-              i === 0 
-                ? "bg-transparent h-[294px]"
-                : card.order % 2 === 1
-                ? "bg-richblack-700 h-[294px]"
-                : card.order % 2 === 0
-                ? "bg-richblack-800 h-[294px]"
-                : "bg-transparent"
-            } ${card.order === 3 && "xl:col-start-2"}  `}
+            variants={itemVariants}
+            className={`glass rounded-3xl p-8 hover:shadow-neon transition-all duration-300 ${
+              i === 0 ? "md:col-span-2 lg:col-span-2" : ""
+            }`}
           >
-            {card.order === 0 ? (
-              <div className="xl:w-[90%] flex flex-col gap-3 pb-10 xl:pb-0 p-8">
-                <div className="text-4xl font-semibold ">
-                  {card.heading}
-                </div>
-                <p className="text-richblack-300 font-medium">
-                  {highlightVidyarthiHub(card.description)}
-                </p>
-
-                <div className="w-fit mt-2">
-                  <CTAButton active={true} linkto={card.BtnLink}>
-                    {card.BtnText}
-                  </CTAButton>
-                </div>
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex items-center gap-4">
+                <IconComponent className={`w-8 h-8 ${card.color}`} />
+                <h3 className="text-xl font-bold text-white">{card.heading}</h3>
               </div>
-            ) : (
-              <div className="p-8 flex flex-col gap-8">
-                <h1 className="text-richblack-5 text-lg">{card.heading}</h1>
+              
+              <p className="text-white/80 leading-relaxed flex-grow">
+                {highlightVidyarthiHub(card.description)}
+              </p>
 
-                <p className="text-richblack-300 font-medium">
-                  {highlightVidyarthiHub(card.description)}
-                </p>
-              </div>
-            )}
-          </div>
+              {card.BtnText && (
+                <motion.a
+                  href={card.BtnLink}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors duration-200 font-semibold"
+                >
+                  {card.BtnText}
+                  <ArrowRight className="w-4 h-4" />
+                </motion.a>
+              )}
+            </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 };
 

@@ -64,21 +64,19 @@ export default function PublishCourse() {
   }
 
   return (
-    <div className="rounded-md border-[1px] border-richblack-700 bg-richblack-800 p-6">
-      <p className="text-2xl font-semibold text-richblack-5">
-        Publish Settings
-      </p>
+    <div className="glass bg-white/10 backdrop-blur-xl border border-cyan-900/30 shadow-2xl rounded-2xl p-10">
+      <p className="text-2xl font-bold text-white mb-6">Publish Settings</p>
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Checkbox */}
         <div className="my-6 mb-8">
-          <label htmlFor="public" className="inline-flex items-center text-lg">
+          <label htmlFor="public" className="inline-flex items-center text-lg text-white/80 font-semibold">
             <input
               type="checkbox"
               id="public"
               {...register("public")}
-              className="border-gray-300 h-4 w-4 rounded bg-richblack-500 text-richblack-400 focus:ring-2 focus:ring-richblack-5"
+              className="glass-input border-cyan-400/40 h-5 w-5 rounded focus:ring-2 focus:ring-cyan-400 transition-all mr-2"
             />
-            <span className="ml-2 text-richblack-400">
+            <span className="ml-2 text-white/80">
               Make this course as public
             </span>
           </label>
@@ -90,7 +88,7 @@ export default function PublishCourse() {
             disabled={loading}
             type="button"
             onClick={goBack}
-            className="flex cursor-pointer items-center gap-x-2 rounded-md bg-richblack-300 py-[8px] px-[20px] font-semibold text-richblack-900"
+            className="flex cursor-pointer items-center gap-x-2 rounded-full bg-white/20 py-2 px-6 font-semibold text-white hover:bg-cyan-900 transition-all"
           >
             Back
           </button>

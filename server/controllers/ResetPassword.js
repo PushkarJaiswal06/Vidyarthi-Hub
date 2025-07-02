@@ -27,10 +27,36 @@ exports.resetPasswordToken = async (req, res) => {
 
 		const url = `http://localhost:3000/update-password/${token}`;
 
+		// Modern HTML email template
+		const html = `
+		<!DOCTYPE html>
+		<html>
+		  <body style="font-family: Arial, sans-serif; background: #f7f7f7; padding: 40px;">
+			<div style="max-width: 480px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 32px;">
+			  <h2 style="color: #0ea5e9;">Password Reset Request</h2>
+			  <p>Hello,</p>
+			  <p>We received a request to reset your password for your VidyarthiHub account.</p>
+			  <p>
+				<a href="${url}"
+				   style="display: inline-block; background: #0ea5e9; color: #fff; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-weight: bold;">
+				  Reset Password
+				</a>
+			  </p>
+			  <p>If the button above does not work, copy and paste this link into your browser:</p>
+			  <p style="word-break: break-all; color: #555;">
+				${url}
+			  </p>
+			  <p>If you did not request a password reset, you can safely ignore this email.</p>
+			  <hr style="margin: 24px 0;">
+			  <p style="font-size: 12px; color: #888;">&copy; 2024 VidyarthiHub. All rights reserved.</p>
+			</div>
+		  </body>
+		</html>
+		`;
 		await mailSender(
 			email,
 			"Password Reset",
-			`Your Link for email verification is ${url}. Please click this url to reset your password.`
+			html
 		);
 
 		res.json({

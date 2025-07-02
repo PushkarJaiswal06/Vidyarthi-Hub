@@ -38,6 +38,39 @@ const ExploreMore = () => {
         }
       } catch (error) {
         console.error("Error fetching courses:", error);
+        // Set some dummy data for demo purposes
+        setCourses([
+          {
+            heading: "Introduction to Web Development",
+            description: "Learn the fundamentals of HTML, CSS, and JavaScript to build modern websites.",
+            level: "Beginner",
+            lessionNumber: 12,
+            courseId: "1",
+            thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop",
+            price: "Free",
+            instructor: { firstName: "John", lastName: "Doe" }
+          },
+          {
+            heading: "Advanced JavaScript Concepts",
+            description: "Master advanced JavaScript patterns, async programming, and modern ES6+ features.",
+            level: "Intermediate",
+            lessionNumber: 18,
+            courseId: "2",
+            thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=250&fit=crop",
+            price: "₹999",
+            instructor: { firstName: "Jane", lastName: "Smith" }
+          },
+          {
+            heading: "React Development Masterclass",
+            description: "Build modern web applications with React, Redux, and advanced state management.",
+            level: "Advanced",
+            lessionNumber: 24,
+            courseId: "3",
+            thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop",
+            price: "₹1499",
+            instructor: { firstName: "Mike", lastName: "Johnson" }
+          }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -135,46 +168,45 @@ const ExploreMore = () => {
     return (
       <div className="text-center py-10">
         <div className="spinner"></div>
-        <p className="text-richblack-300 mt-4">Loading courses...</p>
+        <p className="text-neutral-600 mt-4">Loading courses...</p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="relative">
       {/* Explore more section */}
-      <div>
-        <div className="text-4xl font-semibold text-center my-10">
+      <div className="text-center mb-16">
+        <div className="text-4xl font-semibold text-neutral-900 mb-4">
           Unlock the
           <HighlightText text={"Power of Code"} />
-          <p className="text-center text-richblack-300 text-lg font-semibold mt-1">
-            Learn to Build Anything You Can Imagine
-          </p>
         </div>
+        <p className="text-center text-neutral-600 text-lg font-medium">
+          Learn to Build Anything You Can Imagine
+        </p>
       </div>
 
       {/* Tabs Section */}
-      <div className="hidden lg:flex gap-5 -mt-5 mx-auto w-max bg-richblack-800 text-richblack-200 p-1 rounded-full font-medium drop-shadow-[0_1.5px_rgba(255,255,255,0.25)]">
+      <div className="flex flex-wrap justify-center gap-4 mb-12">
         {tabsName.map((ele, index) => {
           return (
-            <div
-              className={` text-[16px] flex flex-row items-center gap-2 ${
+            <button
+              className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
                 currentTab === ele
-                  ? "bg-richblack-900 text-richblack-5 font-medium"
-                  : "text-richblack-200"
-              } px-7 py-[7px] rounded-full transition-all duration-200 cursor-pointer hover:bg-richblack-900 hover:text-richblack-5`}
+                  ? "bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-glow"
+                  : "bg-white text-neutral-700 hover:bg-primary-50 hover:text-primary-600 border border-neutral-200"
+              }`}
               key={index}
               onClick={() => setMyCards(ele)}
             >
               {ele}
-            </div>
+            </button>
           );
         })}
       </div>
-      <div className="hidden lg:block lg:h-[200px]"></div>
 
-      {/* Cards Group */}
-      <div className="lg:absolute gap-10 justify-center lg:gap-0 flex lg:justify-between flex-wrap w-full lg:bottom-[0] lg:left-[50%] lg:translate-x-[-50%] lg:translate-y-[50%] text-black lg:mb-0 mb-7 lg:px-0 px-3">
+      {/* Cards Group - Fixed Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         {courses.length > 0 ? (
           courses.map((ele, index) => {
             return (
@@ -187,8 +219,10 @@ const ExploreMore = () => {
             );
           })
         ) : (
-          <div className="text-center text-richblack-300 w-full">
-            No courses available in this category.
+          <div className="col-span-full text-center text-neutral-600 py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-xl font-semibold mb-2">No courses available</h3>
+            <p className="text-neutral-500">Check back soon for new courses in this category.</p>
           </div>
         )}
       </div>

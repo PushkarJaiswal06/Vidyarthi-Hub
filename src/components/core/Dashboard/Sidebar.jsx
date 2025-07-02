@@ -1,106 +1,157 @@
-import { useState } from "react"
-import { VscSignOut } from "react-icons/vsc"
-import { useDispatch, useSelector } from "react-redux"
-import { useNavigate } from "react-router-dom"
-import { FiMenu } from "react-icons/fi"
-
-import { sidebarLinks } from "../../../data/dashboard-links"
-import { logout } from "../../../services/operations/authAPI"
+import React, { useState } from "react"
+import { NavLink, matchPath, useLocation, useNavigate } from "react-router-dom"
+import { useSelector, useDispatch } from "react-redux"
+import { ACCOUNT_TYPE } from "../../../utils/constants"
+import { sidebarLinks as dashboardLinks } from "../../../data/dashboard-links"
+import { 
+  FaHome, 
+  FaUser, 
+  FaCog, 
+  FaShoppingCart, 
+  FaGraduationCap, 
+  FaBook, 
+  FaPlus, 
+  FaChartBar,
+  FaSignOutAlt,
+  FaBars,
+  FaTimes
+} from "react-icons/fa"
 import ConfirmationModal from "../../common/ConfirmationModal"
-import SidebarLink from "./SidebarLink"
+import { logout } from "../../../services/operations/authAPI"
 
-export default function Sidebar() {
-  const { user, loading: profileLoading } = useSelector(
-    (state) => state.profile
-  )
-  const { loading: authLoading } = useSelector((state) => state.auth)
+function Sidebar() {
+  const { user } = useSelector((state) => state.profile)
+  const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  // to keep track of confirmation modal
   const [confirmationModal, setConfirmationModal] = useState(null)
-  // sidebar open state for mobile
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  if (profileLoading || authLoading) {
-    return (
-      <div className="grid h-[calc(100vh-3.5rem)] min-w-[220px] items-center border-r-[1px] border-r-richblack-700 bg-richblack-800">
-        <div className="spinner"></div>
-      </div>
-    )
+  const matchRoute = (route) => {
+    return matchPath({ path: route }, location.pathname)
   }
+
+  const getIcon = (name) => {
+    switch (name) {
+      case "Dashboard":
+        return <FaHome className="w-5 h-5" />
+      case "My Profile":
+        return <FaUser className="w-5 h-5" />
+      case "Settings":
+        return <FaCog className="w-5 h-5" />
+      case "Cart":
+        return <FaShoppingCart className="w-5 h-5" />
+      case "Enrolled Courses":
+        return <FaGraduationCap className="w-5 h-5" />
+      case "My Courses":
+        return <FaBook className="w-5 h-5" />
+      case "Add Course":
+        return <FaPlus className="w-5 h-5" />
+      case "Instructor":
+        return <FaChartBar className="w-5 h-5" />
+      default:
+        return <FaHome className="w-5 h-5" />
+    }
+  }
+
+  const filteredLinks = dashboardLinks.filter((link) => {
+    if (user?.accountType === ACCOUNT_TYPE.STUDENT) {
+      return link.type === "Student" || link.type === "Common"
+    } else if (user?.accountType === ACCOUNT_TYPE.INSTRUCTOR) {
+      return link.type === "Instructor" || link.type === "Common"
+    }
+    return false
+  })
 
   return (
     <>
-      {/* Hamburger menu for mobile */}
+      {/* Mobile Menu Button */}
       <button
-        className="fixed top-4 left-4 z-50 flex items-center justify-center rounded-md bg-richblack-800 p-2 text-2xl text-richblack-100 shadow-lg md:hidden"
-        onClick={() => setSidebarOpen(true)}
-        aria-label="Open sidebar"
+        className="lg:hidden fixed top-20 left-4 z-40 p-2 bg-white shadow-soft border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
       >
-        <FiMenu />
+        {isMobileMenuOpen ? (
+          <FaTimes className="w-6 h-6 text-neutral-700" />
+        ) : (
+          <FaBars className="w-6 h-6 text-neutral-700" />
+        )}
       </button>
 
-      {/* Sidebar for desktop and as drawer for mobile */}
-      <div
-        className={`
-          fixed md:static top-14 md:top-0 left-0 z-40 h-[calc(100vh-3.5rem)] min-w-[220px] flex-col border-r-[1px] border-r-richblack-700 bg-richblack-800 py-10 transition-transform duration-300
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:flex
-        `}
-        style={{ maxWidth: 280 }}
-      >
-        {/* Close button for mobile */}
-        <div className="flex md:hidden justify-end px-4 pb-2">
-          <button
-            className="text-2xl text-richblack-100"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            &times;
-          </button>
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-gradient-to-br from-richblack-800 to-richblack-900 shadow-2xl shadow-cyan-900/40 border-r border-cyan-900/40 transform transition-transform duration-300 lg:translate-x-0${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* User Info */}
+        <div className="pt-16 pb-2 border-b border-cyan-900/40 flex items-center space-x-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+            {user?.firstName?.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-base font-bold text-white truncate">{user?.firstName} {user?.lastName}</div>
+            <div className="text-xs text-cyan-200 truncate">{user?.email}</div>
+            <div className="text-xs text-cyan-400 font-semibold capitalize mt-1">{user?.accountType} <span className="text-cyan-200">Dashboard</span></div>
+            
+          </div>
+          
         </div>
-        <div className="flex flex-col">
-          {sidebarLinks.map((link) => {
-            if (link.type && user?.accountType !== link.type) return null
-            return (
-              <SidebarLink key={link.id} link={link} iconName={link.icon} />
-            )
-          })}
-        </div>
-        <div className="mx-auto mt-6 mb-6 h-[1px] w-10/12 bg-richblack-700" />
-        <div className="flex flex-col">
-          <SidebarLink
-            link={{ name: "Settings", path: "/dashboard/settings" }}
-            iconName="VscSettingsGear"
-          />
+        {/* Navigation Links */}
+        <nav className="flex-1 py-6 space-y-2 overflow-y-auto">
+          {filteredLinks.map((link, index) => (
+            <NavLink
+              key={index}
+              to={link.path}
+              className={({ isActive }) =>
+                `flex items-center space-x-3 px-5 py-3 rounded-lg font-semibold text-base transition-all duration-200 group border border-transparent ${
+                  isActive
+                    ? "bg-cyan-700/80 text-white border-cyan-400 shadow-lg"
+                    : "text-cyan-100 hover:bg-cyan-800/60 hover:text-white"
+                }`
+              }
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <div className={`transition-colors duration-200 ${
+                matchRoute(link.path) ? "text-white" : "text-cyan-300 group-hover:text-white"
+              }`}>
+                {getIcon(link.name)}
+              </div>
+              <span>{link.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+        {/* Footer */}
+        <div className="p-4 border-t border-cyan-900/40 flex flex-col gap-2">
+          <NavLink to="/dashboard/my-profile" className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold text-cyan-100 hover:bg-cyan-800/60 hover:text-white transition-all duration-200 group">
+            <FaUser className="w-5 h-5 text-cyan-300 group-hover:text-white" />
+            <span>My Profile</span>
+          </NavLink>
           <button
-            onClick={() =>
-              setConfirmationModal({
-                text1: "Are you sure?",
-                text2: "You will be logged out of your account.",
-                btn1Text: "Logout",
-                btn2Text: "Cancel",
-                btn1Handler: () => dispatch(logout(navigate)),
-                btn2Handler: () => setConfirmationModal(null),
-              })
-            }
-            className="px-8 py-2 text-sm font-medium text-richblack-300"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold text-cyan-100 hover:bg-red-700/60 hover:text-white transition-all duration-200 group"
+            onClick={() => setConfirmationModal({
+              text1: "Are you sure you want to sign out?",
+              text2: "You will be logged out of your account.",
+              btn1Text: "Yes",
+              btn2Text: "Cancel",
+              btn1Handler: () => { dispatch(logout(navigate)); setConfirmationModal(null); },
+              btn2Handler: () => setConfirmationModal(null),
+            })}
           >
-            <div className="flex items-center gap-x-2">
-              <VscSignOut className="text-lg" />
-              <span>Logout</span>
-            </div>
+            <FaSignOutAlt className="w-5 h-5 text-cyan-300 group-hover:text-white" />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
-      {/* Overlay for mobile when sidebar is open */}
-      {sidebarOpen && (
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black bg-opacity-40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+
       {confirmationModal && <ConfirmationModal modalData={confirmationModal} />}
     </>
   )
 }
+
+export default Sidebar

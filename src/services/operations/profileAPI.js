@@ -1,6 +1,6 @@
 import { toast } from "react-hot-toast"
 
-import { setLoading, setUser } from "../../slices/profileSlice"
+import { setLoading, setUser, setEnrolledCourses } from "../../slices/profileSlice"
 import { apiConnector } from "../apiconnector"
 import { profileEndpoints } from "../apis"
 import { logout } from "./authAPI"
@@ -63,6 +63,20 @@ export async function getUserEnrolledCourses(token) {
   }
   toast.dismiss(toastId)
   return result
+}
+
+// Redux thunk to fetch and store enrolled courses
+export function fetchAndStoreEnrolledCourses(token) {
+  return async (dispatch) => {
+    dispatch(setLoading(true));
+    try {
+      const courses = await getUserEnrolledCourses(token);
+      dispatch(setEnrolledCourses(courses || []));
+    } catch (error) {
+      dispatch(setEnrolledCourses([]));
+    }
+    dispatch(setLoading(false));
+  };
 }
 
 export async function getInstructorData(token) {

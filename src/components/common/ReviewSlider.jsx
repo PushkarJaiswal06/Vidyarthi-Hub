@@ -64,7 +64,7 @@ function ReviewSlider() {
           {reviews.map((review, i) => {
             return (
               <SwiperSlide key={i}>
-                <div className="flex flex-col gap-3 bg-richblack-800 p-4 text-[14px] text-richblack-25 rounded-lg h-full">
+                <div className="flex flex-col gap-3 bg-white/10 backdrop-blur-sm p-4 text-[14px] text-white rounded-lg h-full border border-white/20">
                   <div className="flex items-center gap-4">
                     <img
                       src={
@@ -76,13 +76,13 @@ function ReviewSlider() {
                       className="h-9 w-9 rounded-full object-cover"
                     />
                     <div className="flex flex-col">
-                      <h1 className="font-semibold text-richblack-5">{`${review?.user?.firstName} ${review?.user?.lastName}`}</h1>
-                      <h2 className="text-[12px] font-medium text-richblack-500">
+                      <h1 className="font-semibold text-white">{`${review?.user?.firstName} ${review?.user?.lastName}`}</h1>
+                      <h2 className="text-[12px] font-medium text-white/80">
                         {review?.course?.courseName}
                       </h2>
                     </div>
                   </div>
-                  <p className="font-medium text-richblack-25 flex-grow">
+                  <p className="font-medium text-white/90 flex-grow">
                     {review?.review.split(" ").length > truncateWords
                       ? `${review?.review
                           .split(" ")
@@ -91,7 +91,7 @@ function ReviewSlider() {
                       : `${review?.review}`}
                   </p>
                   <div className="flex items-center gap-2 ">
-                    <h3 className="font-semibold text-yellow-100">
+                    <h3 className="font-semibold text-yellow-300">
                       {review.rating.toFixed(1)}
                     </h3>
                     <ReactStars
