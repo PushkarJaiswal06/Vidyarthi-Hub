@@ -14,7 +14,8 @@ export default function LiveClassModal({ courseId, setModalOpen, onScheduled }) 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/liveclass/schedule", {
+      const BASE_URL = process.env.REACT_APP_BASE_URL;
+      const res = await fetch(`${BASE_URL}/liveclass/schedule`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

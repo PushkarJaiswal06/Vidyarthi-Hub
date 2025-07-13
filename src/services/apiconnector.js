@@ -1,11 +1,11 @@
 import axios from "axios"
 
 export const axiosInstance = axios.create({});
-const BASE_URL = process.env.REACT_APP_BASE_URL 
-  ? `${process.env.REACT_APP_BASE_URL}/api/v1`
+const BASE_URL = process.env.REACT_APP_BASE_URL
+  ? process.env.REACT_APP_BASE_URL
   : process.env.NODE_ENV === 'production'
-  ? "https://api.vidyarthi-hub.xyz/api/v1"
-  : "http://localhost:5000/api/v1";
+    ? "https://api.vidyarthi-hub.xyz/api/v1"
+    : "http://localhost:5000/api/v1";
 
 export const apiConnector = (method, url, bodyData, headers, params) => {
     console.log("=== API CONNECTOR DEBUG ===");
