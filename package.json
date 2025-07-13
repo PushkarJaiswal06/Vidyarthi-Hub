@@ -50,7 +50,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "cross-env CI=false GENERATE_SOURCEMAP=false react-scripts build",
-    "postbuild": "copy public\\static.json build\\static.json",
+    "postbuild": "cpx \"public/static.json\" build/",
     "build:analyze": "cross-env CI=false GENERATE_SOURCEMAP=false npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
     "eject": "react-scripts eject",
     "server": "cd server && npm run dev",
@@ -75,6 +75,7 @@
     ]
   },
   "devDependencies": {
+    "cpx": "^1.5.0",
     "cross-env": "^7.0.3",
     "tailwindcss": "^3.2.7"
   },
