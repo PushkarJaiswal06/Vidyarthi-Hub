@@ -84,7 +84,6 @@ const Navbar = () => {
     '/contact': 'bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-800',
     '/login': 'bg-gradient-to-br from-richblack-900 via-purple-900 to-richblack-800',
     '/signup': 'bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900',
-    '/dashboard': 'bg-gradient-to-br from-neutral-50 via-white to-primary-50',
     '/dashboard/my-profile': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
     '/dashboard/enrolled-courses': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
     '/dashboard/cart': 'bg-gradient-to-br from-richblack-800 via-cyan-800 to-richblack-900',
@@ -267,7 +266,7 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="pt-4 space-y-3">
-                  <Link to="/dashboard" onClick={() => setToggle(false)}>
+                  <Link to="/dashboard/my-profile" onClick={() => setToggle(false)}>
                     <button className="w-full flex items-center space-x-3 px-4 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300">
                       <User className="w-5 h-5" />
                       <span className="text-white">Dashboard</span>

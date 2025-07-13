@@ -16,6 +16,7 @@ import {
 } from "../../../../../slices/courseSlice"
 import IconBtn from "../../../../common/IconBtn"
 import NestedView from "./NestedView"
+import LiveClassModal from "./LiveClassModal"
 
 export default function CourseBuilderForm() {
   const {
@@ -29,6 +30,7 @@ export default function CourseBuilderForm() {
   const { token } = useSelector((state) => state.auth)
   const [loading, setLoading] = useState(false)
   const [editSectionName, setEditSectionName] = useState(null)
+  const [showLiveClassModal, setShowLiveClassModal] = useState(false)
   const dispatch = useDispatch()
 
   // handle form submission
@@ -99,9 +101,32 @@ export default function CourseBuilderForm() {
     dispatch(setEditCourse(true))
   }
 
+  // Add handler for when a live class is scheduled
+  const handleLiveClassScheduled = (liveClass) => {
+    toast.success("Live class scheduled!")
+    // Optionally: update state/UI with new live class
+  }
+
   return (
     <div className="space-y-8 glass bg-white/10 backdrop-blur-xl border border-cyan-900/30 shadow-2xl rounded-2xl p-10">
       <p className="text-2xl font-bold text-white mb-6">Course Builder</p>
+      {/* Schedule Live Class Button */}
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          className="bg-gradient-to-r from-cyan-400 to-blue-500 text-white px-6 py-2 rounded-full font-semibold shadow hover:from-blue-500 hover:to-cyan-400 transition-all"
+          onClick={() => setShowLiveClassModal(true)}
+        >
+          Schedule Live Class
+        </button>
+      </div>
+      {showLiveClassModal && (
+        <LiveClassModal
+          courseId={course._id}
+          setModalOpen={setShowLiveClassModal}
+          onScheduled={handleLiveClassScheduled}
+        />
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex flex-col space-y-2">
           <label className="text-base font-semibold text-white/80 mb-1" htmlFor="sectionName">

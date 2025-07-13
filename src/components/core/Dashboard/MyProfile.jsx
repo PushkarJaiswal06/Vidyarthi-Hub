@@ -15,6 +15,7 @@ function MyProfile() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [confirmationModal, setConfirmationModal] = useState(null);
+  const [activeLiveClass, setActiveLiveClass] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -225,6 +226,17 @@ function MyProfile() {
         </button>
       </div>
       {confirmationModal && <ConfirmationModal modalData={confirmationModal} />}
+
+      {/* Live Class Room Modal (placeholder) */}
+      {activeLiveClass && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80">
+          <div className="bg-white/10 border border-cyan-900/30 rounded-2xl shadow-2xl p-10 text-white max-w-2xl w-full">
+            <h2 className="text-2xl font-bold mb-4">Live Class Room (Coming Soon)</h2>
+            <div className="mb-4">Class: <span className="text-cyan-300">{activeLiveClass.title}</span></div>
+            <button className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-semibold shadow transition-all" onClick={() => setActiveLiveClass(null)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -31,6 +31,8 @@ import CourseDetails from "./pages/CourseDetails";
 import ViewCourse from "./pages/ViewCourse";
 import VideoDetails from "./components/core/ViewCourse/VideoDetails";
 import Instructor from "./components/core/Dashboard/InstructorDashboard/Instructor";
+import MyLiveClasses from "./pages/MyLiveClasses";
+import LiveClassRoomWrapper from "./pages/LiveClassRoomWrapper";
 
 function App() {
 
@@ -152,30 +154,37 @@ function App() {
           )
         }
 
+        {
+          user?.accountType && (
+            <Route path="dashboard/live-classes" element={<MyLiveClasses />} />
+          )
+        }
 
       </Route>
 
       
-        <Route element={
-          <PrivateRoute>
-            <ViewCourse />
-          </PrivateRoute>
-        }>
-
-        {
-          user?.accountType === ACCOUNT_TYPE.STUDENT && (
-            <>
-            <Route 
-              path="view-course/:courseId/section/:sectionId/sub-section/:subSectionId"
-              element={<VideoDetails />}
-            />
-            </>
-          )
-        }
-
+        <Route
+          path="/view-course/:courseId"
+          element={
+            <PrivateRoute>
+              <ViewCourse />
+            </PrivateRoute>
+          }
+        >
+          <Route
+            path="section/:sectionId/sub-section/:subSectionId"
+            element={<VideoDetails />}
+          />
         </Route>
 
-
+        <Route
+          path="/live-class-room/:id"
+          element={
+            <PrivateRoute>
+              <LiveClassRoomWrapper />
+            </PrivateRoute>
+          }
+        />
 
       <Route path="*" element={<Error />} />
 

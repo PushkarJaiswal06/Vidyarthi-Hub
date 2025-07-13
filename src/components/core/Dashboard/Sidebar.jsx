@@ -67,7 +67,7 @@ function Sidebar() {
     <>
       {/* Mobile Menu Button */}
       <button
-        className="lg:hidden fixed top-20 left-4 z-40 p-2 bg-white shadow-soft border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
+        className="lg:hidden fixed top-16 left-4 z-50 p-2 bg-white shadow-soft border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
       >
         {isMobileMenuOpen ? (
@@ -78,9 +78,17 @@ function Sidebar() {
       </button>
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-gradient-to-br from-richblack-800 to-richblack-900 shadow-2xl shadow-cyan-900/40 border-r border-cyan-900/40 transform transition-transform duration-300 lg:translate-x-0${
-        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-br from-richblack-800 to-richblack-900 shadow-2xl shadow-cyan-900/40 border-r border-cyan-900/40 transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+        {/* Close button for mobile */}
+        {isMobileMenuOpen && (
+          <button
+            className="absolute top-4 right-4 z-50 lg:hidden text-white bg-cyan-900/80 rounded-full p-2 hover:bg-cyan-700 transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close sidebar"
+          >
+            <FaTimes className="w-6 h-6" />
+          </button>
+        )}
         {/* User Info */}
         <div className="pt-16 pb-2 border-b border-cyan-900/40 flex items-center space-x-4">
           <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-lg">
@@ -144,7 +152,7 @@ function Sidebar() {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}

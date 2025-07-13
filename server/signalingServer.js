@@ -1,97 +1,9 @@
-const dotenv = require("dotenv");
-dotenv.config();
-console.log("MONGODB_URL:", process.env.MONGODB_URL);
-console.log("Current working directory:", process.cwd());
-console.log("=== CLOUDINARY CONFIG ===");
-console.log("CLOUD_NAME:", process.env.CLOUD_NAME);
-console.log("API_KEY:", process.env.API_KEY ? "SET" : "NOT SET");
-console.log("API_SECRET:", process.env.API_SECRET ? "SET" : "NOT SET");
-console.log("FOLDER_NAME:", process.env.FOLDER_NAME);
-console.log("=========================");
-console.log("=== RAZORPAY CONFIG ===");
-console.log("RAZORPAY_KEY:", process.env.RAZORPAY_KEY ? "SET" : "NOT SET");
-console.log("RAZORPAY_SECRET:", process.env.RAZORPAY_SECRET ? "SET" : "NOT SET");
-console.log("=========================");
-const express = require("express");
-const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
 
-const userRoutes = require("./routes/User");
-const profileRoutes = require("./routes/Profile");
-const paymentRoutes = require("./routes/Payments");
-const courseRoutes = require("./routes/Course");
-const contactUsRoute = require("./routes/Contact");
-const database = require("./config/database");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const {cloudinaryConnect } = require("./config/cloudinary");
-const fileUpload = require("express-fileupload");
-const liveClassRoutes = require("./routes/LiveClass");
-const { Server } = require("socket.io");
+const PORT = process.env.SIGNALING_PORT || 5000;
 
-const PORT = process.env.PORT || 5000;
-
-//database connect
-database.connect();
-//middlewares
-app.use(express.json());
-app.use(cookieParser());
-app.use(
-	cors({
-		origin:["http://localhost:3000", "https://vidyarthi-hub-seven.vercel.app" , "https://www.vidyarthi-hub.xyz"],
-		credentials:true,
-	})
-)
-
-app.use(
-	fileUpload({
-		useTempFiles:true,
-		tempFileDir:"/tmp",
-	})
-)
-//cloudinary connection
-cloudinaryConnect();
-
-//routes
-app.use("/api/v1/auth", userRoutes);
-app.use("/api/v1/profile", profileRoutes);
-app.use("/api/v1/course", courseRoutes);
-app.use("/api/v1/payment", paymentRoutes);
-app.use("/api/v1/reach", contactUsRoute);
-app.use("/api/v1/liveclass", liveClassRoutes);
-
-//def route
-
-app.get("/", (req, res) => {
-	return res.json({
-		success:true,
-		message:'Your server is up and running....'
-	});
-});
-
-// Expose Razorpay key to frontend
-app.get("/api/v1/razorpay-key", (req, res) => {
-	console.log("=== RAZORPAY KEY REQUEST ===");
-	console.log("RAZORPAY_KEY:", process.env.RAZORPAY_KEY ? "SET" : "NOT SET");
-	
-	if (!process.env.RAZORPAY_KEY) {
-		console.log("ERROR: RAZORPAY_KEY not configured");
-		return res.status(500).json({
-			success: false,
-			message: "Razorpay key not configured"
-		});
-	}
-	
-	return res.json({
-		success: true,
-		key: process.env.RAZORPAY_KEY
-	});
-});
-
-const server = app.listen(PORT, () => {
-	console.log(`App is running at ${PORT}`)
-});
-
-// Socket.io signaling server
+const server = http.createServer();
 const io = new Server(server, {
   cors: {
     origin: [
@@ -130,11 +42,6 @@ io.on('connection', (socket) => {
   // Relay ICE candidates
   socket.on('ice-candidate', ({ roomId, candidate, userId }) => {
     socket.to(roomId).emit('ice-candidate', { candidate, userId, socketId: socket.id });
-  });
-
-  // Chat messages
-  socket.on('chat-message', ({ roomId, ...msg }) => {
-    socket.to(roomId).emit('chat-message', msg);
   });
 
   // --- Polls & Quizzes ---
@@ -218,6 +125,11 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('unmute-requested', { userId, userName });
   });
 
+  // Chat messages
+  socket.on('chat-message', ({ roomId, ...msg }) => {
+    socket.to(roomId).emit('chat-message', msg);
+  });
+
   // Handle disconnect
   socket.on('disconnecting', () => {
     const rooms = Array.from(socket.rooms);
@@ -233,5 +145,6 @@ io.on('connection', (socket) => {
   });
 });
 
-console.log(`Signaling server integrated on port ${PORT}`);
-
+server.listen(PORT, () => {
+  console.log(`Signaling server running on port ${PORT}`);
+}); 
