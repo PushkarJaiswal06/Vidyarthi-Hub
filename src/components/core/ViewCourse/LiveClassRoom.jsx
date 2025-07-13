@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 
-const SIGNALING_SERVER_URL = "http://localhost:5000"; // Change if deployed
+const SIGNALING_SERVER_URL = process.env.NODE_ENV === 'production' 
+  ? "https://vidyarthi-hub.xyz" 
+  : "http://localhost:5000";
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 const REACTIONS = ["👍", "👏", "😂", "😮", "❤️"];
 const COLORS = ["#fff", "#f87171", "#34d399", "#60a5fa", "#fbbf24", "#a78bfa"];
