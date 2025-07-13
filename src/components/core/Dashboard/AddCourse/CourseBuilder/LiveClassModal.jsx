@@ -15,6 +15,11 @@ export default function LiveClassModal({ courseId, setModalOpen, onScheduled }) 
     setLoading(true);
     try {
       const BASE_URL = process.env.REACT_APP_BASE_URL;
+      // Convert datetime-local input (assumed to be IST) to UTC ISO string
+      // Parse as if input is IST
+      const istDate = new Date(data.scheduledAt + ':00'); // 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DDTHH:mm:00'
+      // IST offset is +5:30 (330 minutes)
+      const utcDate = new Date(istDate.getTime() - (5.5 * 60 * 60000));
       const res = await fetch(`${BASE_URL}/liveclass/schedule`, {
         method: "POST",
         headers: {
@@ -25,7 +30,7 @@ export default function LiveClassModal({ courseId, setModalOpen, onScheduled }) 
           course: courseId,
           title: data.title,
           description: data.description,
-          scheduledAt: data.scheduledAt,
+          scheduledAt: utcDate.toISOString(), // Always send UTC
           duration: data.duration,
         }),
       });

@@ -177,7 +177,7 @@ export default function ViewCourse() {
                         <div>
                           <div className="font-semibold text-white text-lg">{lc.title}</div>
                           <div className="text-cyan-100 text-sm mb-1">{lc.description}</div>
-                          <div className="text-cyan-300 text-xs mb-1">Scheduled: {new Date(lc.scheduledAt).toLocaleString()} | Duration: {lc.duration} min</div>
+                          <div className="text-cyan-300 text-xs mb-1">Scheduled: {new Date(lc.scheduledAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} | Duration: {lc.duration} min</div>
                         </div>
                         <div>
                           <button

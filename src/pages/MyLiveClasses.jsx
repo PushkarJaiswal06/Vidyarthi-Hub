@@ -75,16 +75,38 @@ export default function MyLiveClasses() {
           {classes.map(lc => (
             <li key={lc._id} className="bg-white/10 border border-cyan-900/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
               <div>
-                <div className="font-semibold text-white text-lg">{lc.title}</div>
-                <div className="text-cyan-100 text-sm mb-1">{lc.description}</div>
-                <div className="text-cyan-300 text-xs mb-1">Scheduled: {new Date(lc.scheduledAt).toLocaleString()} | Duration: {lc.duration} min</div>
-                <div className="text-cyan-200 text-xs">
-                  Course: {lc.course?._id ? (
+                <div className="font-bold text-cyan-300 text-lg mb-1">
+                  {lc.course?._id ? (
                     <Link to={`/view-course/${lc.course._id}`} className="underline hover:text-cyan-400">{lc.course.courseName}</Link>
                   ) : (
-                    lc.courseName || lc.course?.courseName
+                    lc.courseName || lc.course?.courseName || "Unknown Course"
                   )}
                 </div>
+                <div className="font-semibold text-white text-base">{lc.title}</div>
+                <div className="text-cyan-100 text-sm mb-1">{lc.description}</div>
+                <div className="text-cyan-300 text-xs mb-1">Scheduled: {new Date(lc.scheduledAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} | Duration: {lc.duration} min</div>
+                {/* Instructor Name for students */}
+                {user?.accountType !== 'Instructor' && lc.instructor && (
+                  <div className="text-cyan-200 text-xs mb-1">Instructor: {lc.instructor.firstName} {lc.instructor.lastName}</div>
+                )}
+                {/* Status */}
+                <div className="text-xs font-semibold mb-1">
+                  Status: {(() => {
+                    const now = new Date();
+                    const start = new Date(lc.scheduledAt);
+                    const end = new Date(start.getTime() + (lc.duration || 0) * 60000);
+                    if (lc.status === 'completed' || now > end) return <span className="text-green-400">Completed</span>;
+                    if (now >= start && now <= end) return <span className="text-yellow-300">Ongoing</span>;
+                    if (now < start) return <span className="text-cyan-400">Upcoming</span>;
+                    return lc.status;
+                  })()}
+                </div>
+                {/* Meeting Link */}
+                {lc.meetingLink && (
+                  <div className="text-cyan-400 text-xs mb-1">
+                    Meeting Link: <a href={lc.meetingLink} target="_blank" rel="noopener noreferrer" className="underline">Join</a>
+                  </div>
+                )}
               </div>
               <div>
                 {actionLabel && (
