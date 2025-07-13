@@ -14,7 +14,8 @@ export default function LiveClassRoomWrapper() {
     if (!user) return;
     if (!liveClass) {
       setLoading(true);
-      fetch(`/api/v1/liveclass/${id}`, {
+      const BASE_URL = process.env.REACT_APP_BASE_URL;
+      fetch(`${BASE_URL}/liveclass/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       })
         .then((res) => res.json())

@@ -30,11 +30,12 @@ export default function MyLiveClasses() {
   useEffect(() => {
     const fetchLiveClasses = async () => {
       setLoading(true);
+      const BASE_URL = process.env.REACT_APP_BASE_URL;
       let url = '';
       if (user?.accountType === 'Instructor') {
-        url = '/api/v1/liveclass/instructor';
+        url = `${BASE_URL}/liveclass/instructor`;
       } else {
-        url = '/api/v1/liveclass/student';
+        url = `${BASE_URL}/liveclass/student`;
       }
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }

@@ -81,7 +81,8 @@ export default function ViewCourse() {
     const fetchLiveClasses = async () => {
       setLiveLoading(true);
       try {
-        const res = await fetch(`/api/v1/liveclass/course/${courseId}`, {
+        const BASE_URL = process.env.REACT_APP_BASE_URL;
+        const res = await fetch(`${BASE_URL}/liveclass/course/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
