@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -14,11 +14,10 @@ const ICE_SERVERS = [
 const REACTIONS = ["👍", "👏", "😂", "😮", "❤️"];
 const COLORS = ["#fff", "#f87171", "#34d399", "#60a5fa", "#fbbf24", "#a78bfa"];
 
-export default function LiveClassRoom({ roomId, userId, userName, isInstructor, liveClass }) {
+export default function LiveClassRoom({ roomId, userId, userName, isInstructor }) {
   const [connected, setConnected] = useState(false);
   const [peers, setPeers] = useState({});
-  const [remoteStreams, setRemoteStreams] = useState({}); // { userId: MediaStream }
-  const [users, setUsers] = useState([]); // [userId]
+  const [remoteStreams, setRemoteStreams] = useState({});
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
   const [leaving, setLeaving] = useState(false);
@@ -53,9 +52,8 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
   const navigate = useNavigate();
   const location = useLocation();
   const [pendingCandidates, setPendingCandidates] = useState({});
-  const peersRef = useRef({}); // { userId: RTCPeerConnection }
 
-  // 1. Get local media
+  // Get camera/mic and connect to signaling server
   useEffect(() => {
     (async () => {
       try {
@@ -72,62 +70,103 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
         setError("Could not access camera/mic");
       }
     })();
-    // eslint-disable-next-line
   }, []);
 
-  // 2. Connect to signaling server and handle events
   function connectToSignalingServer() {
+    console.log("Connecting to signaling server:", SIGNALING_SERVER_URL);
     socketRef.current = io(SIGNALING_SERVER_URL, { transports: ["websocket"] });
     const socket = socketRef.current;
-    socket.emit("join-room", { roomId, userId });
-
-    socket.on("all-users", async ({ users: existingUsers }) => {
-      setUsers(existingUsers);
-      for (const remoteUserId of existingUsers) {
-        await createPeerConnection(remoteUserId, true); // initiator
+    socket.on("connect", () => {
+      console.log("Connected to signaling server, joining room:", roomId);
+      setConnected(true);
+      socket.emit("join-room", { roomId, userId, userName });
+    });
+    socket.on("user-joined", ({ userId: newUserId, socketId }) => {
+      console.log("User joined:", newUserId, "socketId:", socketId);
+      if (socket.id === socketId) return;
+      // Only the existing user (initiator) creates a peer connection and sends an offer
+      if (socket.id !== socketId) {
+        createPeerConnection(socketId, true);
       }
     });
-
-    socket.on("user-joined", async ({ userId: remoteUserId }) => {
-      setUsers(prev => [...prev, remoteUserId]);
-      await createPeerConnection(remoteUserId, false); // not initiator
-    });
-
-    socket.on("receive-offer", async ({ senderId, offer }) => {
-      const pc = await createPeerConnection(senderId, false);
+    socket.on("offer", async ({ offer, socketId }) => {
+      console.log("Received offer from", socketId, offer);
+      // Only create a peer connection if it doesn't exist (receiver)
+      const pc = peers[socketId] || createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      // After setting remote description, add any queued candidates
+      if (pendingCandidates[socketId]) {
+        pendingCandidates[socketId].forEach((c) => {
+          pc.addIceCandidate(new RTCIceCandidate(c));
+        });
+        setPendingCandidates((prevQ) => {
+          const newQ = { ...prevQ };
+          delete newQ[socketId];
+          return newQ;
+        });
+      }
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      socketRef.current.emit("send-answer", { targetId: senderId, answer });
+      if (socketRef.current) {
+        console.log("Sending answer to", socketId, answer);
+        socketRef.current.emit("answer", { roomId, answer, userId, to: socketId });
+      }
     });
-
-    socket.on("receive-answer", async ({ senderId, answer }) => {
-      const pc = peersRef.current[senderId];
-      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-    });
-
-    socket.on("receive-ice-candidate", async ({ senderId, candidate }) => {
-      const pc = peersRef.current[senderId];
-      if (pc && candidate) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (e) {
-          // ICE candidate may arrive before setRemoteDescription; queue if needed
+    socket.on("answer", async ({ answer, socketId }) => {
+      console.log("Received answer from", socketId, answer);
+      setPeers((prev) => {
+        const pc = prev[socketId];
+        if (pc && pc.signalingState === "have-local-offer") {
+          pc.setRemoteDescription(new RTCSessionDescription(answer));
+          // After setting remote description, add any queued candidates
+          if (pendingCandidates[socketId]) {
+            pendingCandidates[socketId].forEach((c) => {
+              pc.addIceCandidate(new RTCIceCandidate(c));
+            });
+            setPendingCandidates((prevQ) => {
+              const newQ = { ...prevQ };
+              delete newQ[socketId];
+              return newQ;
+            });
+          }
         }
-      }
-    });
-
-    socket.on("user-left", ({ userId: remoteUserId }) => {
-      if (peersRef.current[remoteUserId]) {
-        peersRef.current[remoteUserId].close();
-        delete peersRef.current[remoteUserId];
-      }
-      setRemoteStreams(prev => {
-        const copy = { ...prev };
-        delete copy[remoteUserId];
-        return copy;
+        return prev;
       });
-      setUsers(prev => prev.filter(id => id !== remoteUserId));
+    });
+    socket.on("ice-candidate", async ({ candidate, socketId }) => {
+      console.log("Received ICE candidate from", socketId, candidate);
+      setPeers((prev) => {
+        const pc = prev[socketId];
+        if (pc && candidate) {
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            // Queue the candidate
+            setPendingCandidates((prevQ) => ({
+              ...prevQ,
+              [socketId]: [...(prevQ[socketId] || []), candidate],
+            }));
+          }
+        }
+        return prev;
+      });
+    });
+    socket.on("user-left", ({ socketId }) => {
+      setPeers((prev) => {
+        if (prev[socketId]) {
+          prev[socketId].close();
+          const newPeers = { ...prev };
+          delete newPeers[socketId];
+          return newPeers;
+        }
+        return prev;
+      });
+      setRemoteStreams((prev) => {
+        const newStreams = { ...prev };
+        delete newStreams[socketId];
+        return newStreams;
+      });
+      setParticipants((prev) => prev.filter((id) => id !== socketId));
     });
     // Chat events
     socket.on("chat-message", (msg) => {
@@ -135,37 +174,49 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
     });
   }
 
-  // 3. Create peer connection
-  async function createPeerConnection(remoteUserId, initiator) {
-    if (peersRef.current[remoteUserId]) return peersRef.current[remoteUserId];
-    if (!localStreamRef.current) return null;
+  // Create peer connection
+  function createPeerConnection(socketId, isInitiator) {
+    if (peers[socketId]) return peers[socketId];
+    if (!localStreamRef.current) {
+      console.warn("No local stream available when creating peer connection");
+      return null;
+    }
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-    localStreamRef.current.getTracks().forEach(track => {
-      pc.addTrack(track, localStreamRef.current);
-    });
-    pc.ontrack = (event) => {
-      setRemoteStreams(prev => ({
-        ...prev,
-        [remoteUserId]: event.streams[0]
-      }));
-    };
+    localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current));
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socketRef.current.emit("send-ice-candidate", {
-          targetId: remoteUserId,
-          candidate: event.candidate
-        });
+      if (event.candidate && socketRef.current) {
+        console.log("Sending ICE candidate to", socketId, event.candidate);
+        socketRef.current.emit("ice-candidate", { roomId, candidate: event.candidate, userId, to: socketId });
       }
     };
     pc.oniceconnectionstatechange = () => {
-      // Optionally log or handle state changes
+      console.log("ICE connection state for", socketId, ":", pc.iceConnectionState);
     };
-    peersRef.current[remoteUserId] = pc;
-    if (initiator) {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socketRef.current.emit("send-offer", { targetId: remoteUserId, offer });
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state for", socketId, ":", pc.connectionState);
+    };
+    pc.ontrack = (event) => {
+      const stream = event.streams[0];
+      console.log("Received remote track from", socketId, stream);
+      if (stream) {
+        stream.getTracks().forEach(track => {
+          console.log(`[Remote] Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}, muted: ${track.muted}`);
+        });
+      }
+      setRemoteStreams((prev) => ({ ...prev, [socketId]: stream }));
+      setParticipants((prev) => prev.includes(socketId) ? prev : [...prev, socketId]);
+    };
+    if (isInitiator) {
+      pc.onnegotiationneeded = async () => {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        if (socketRef.current) {
+          console.log("Sending offer to", socketId, offer);
+          socketRef.current.emit("offer", { roomId, offer, userId, to: socketId });
+        }
+      };
     }
+    setPeers((prev) => ({ ...prev, [socketId]: pc }));
     return pc;
   }
 
