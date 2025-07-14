@@ -54,8 +54,6 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
   const location = useLocation();
   const [pendingCandidates, setPendingCandidates] = useState({});
   const peersRef = useRef({}); // { userId: RTCPeerConnection }
-  // Add new state for late joiner sync
-  const [screenSharer, setScreenSharer] = useState(null);
 
   // 1. Get local media
   useEffect(() => {
@@ -88,18 +86,6 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
       for (const remoteUserId of existingUsers) {
         await createPeerConnection(remoteUserId, true); // initiator
       }
-    });
-
-    // --- NEW: Receive full room state on join ---
-    socket.on("room-state", (state) => {
-      setScreenSharer(state.screenSharer);
-      setRaisedHands(state.raisedHands || []);
-      setMutedUsers(state.mutedUsers || []);
-      setActivePoll(state.activePoll || null);
-      setWhiteboardData(state.whiteboardData || []);
-      setIsMuted((state.mutedUsers || []).includes(userId));
-      // If someone is sharing screen, update UI
-      setIsSharingScreen(state.screenSharer === userId);
     });
 
     socket.on("user-joined", async ({ userId: remoteUserId }) => {
@@ -143,65 +129,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
       });
       setUsers(prev => prev.filter(id => id !== remoteUserId));
     });
-
-    // --- Screen sharing events ---
-    socket.on("screen-share-started", ({ userId: sharerId }) => {
-      setScreenSharer(sharerId);
-      setIsSharingScreen(sharerId === userId);
-    });
-    socket.on("screen-share-stopped", ({ userId: sharerId }) => {
-      setScreenSharer(null);
-      if (sharerId === userId) setIsSharingScreen(false);
-    });
-
-    // --- Hand raise events ---
-    socket.on("hands-updated", (hands) => {
-      setRaisedHands(hands);
-    });
-
-    // --- Mute events ---
-    socket.on("muted-users", (list) => {
-      setMutedUsers(list);
-      setIsMuted(list.includes(userId));
-      if (localStreamRef.current) {
-        localStreamRef.current.getAudioTracks().forEach(track => track.enabled = !list.includes(userId));
-      }
-    });
-    socket.on("unmute-requested", ({ userId: reqId, userName }) => {
-      if (isInstructor) {
-        unmuteUser(reqId);
-      }
-    });
-
-    // --- Poll events ---
-    socket.on("poll-launched", (poll) => {
-      setActivePoll(poll);
-      setHasVoted(false);
-    });
-    socket.on("poll-updated", (poll) => {
-      setActivePoll(poll);
-    });
-    socket.on("poll-ended", (results) => {
-      setPollResults(results);
-      setActivePoll(null);
-      setHasVoted(false);
-    });
-
-    // --- Whiteboard events ---
-    socket.on("whiteboard-update", (data) => {
-      setWhiteboardData(data);
-    });
-    socket.on("whiteboard-clear", () => {
-      setWhiteboardData([]);
-    });
-
-    // --- Reactions ---
-    socket.on("show-reaction", ({ emoji, userName }) => {
-      setShowReaction({ emoji, userName });
-      setTimeout(() => setShowReaction(null), 2000);
-    });
-
-    // --- Chat events ---
+    // Chat events
     socket.on("chat-message", (msg) => {
       setChatMessages((prev) => [...prev, msg]);
     });
@@ -294,7 +222,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
     });
   }, [remoteStreams]);
 
-  // --- Enhanced screen sharing logic ---
+  // Screen sharing logic
   const startScreenShare = async () => {
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -304,11 +232,9 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
         localVideoRef.current.srcObject = screenStream;
       }
       setIsSharingScreen(true);
-      // Notify server and others
-      if (socketRef.current) socketRef.current.emit("start-screen-share", { roomId, userId });
       screenStream.getVideoTracks()[0].onended = stopScreenShare;
     } catch (e) {
-      setError("Screen sharing failed: " + (e.message || e));
+      // User cancelled or error
     }
   };
 
@@ -322,13 +248,6 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor, 
     screenStreamRef.current.getTracks().forEach((t) => t.stop());
     screenStreamRef.current = null;
     setIsSharingScreen(false);
-    // Notify server and others
-    if (socketRef.current) socketRef.current.emit("stop-screen-share", { roomId, userId });
-  };
-
-  // Instructor force-stop screen share
-  const forceStopScreenShare = () => {
-    if (socketRef.current) socketRef.current.emit("force-stop-screen-share", { roomId });
   };
 
   function replaceVideoTrackForAllPeers(newTrack) {
