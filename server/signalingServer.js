@@ -9,7 +9,8 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "https://vidyarthi-hub-seven.vercel.app",
-      "https://www.vidyarthi-hub.xyz"
+      "https://www.vidyarthi-hub.xyz",
+      "https://vidyarthi-hub-v2-frontend.onrender.com"
     ],
     methods: ["GET", "POST"]
   }
