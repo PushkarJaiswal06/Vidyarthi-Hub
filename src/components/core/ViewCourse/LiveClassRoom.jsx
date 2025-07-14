@@ -77,13 +77,15 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     socket.on("user-joined", ({ userId: newUserId, socketId }) => {
       console.log("User joined:", newUserId, "socketId:", socketId);
       if (socket.id === socketId) return;
-      // Always create a peer connection for both initiator and receiver
-      createPeerConnection(socketId, true);
-      createPeerConnection(socketId, false);
+      // Only the existing user (initiator) creates a peer connection and sends an offer
+      if (socket.id !== socketId) {
+        createPeerConnection(socketId, true);
+      }
     });
     socket.on("offer", async ({ offer, socketId }) => {
       console.log("Received offer from", socketId, offer);
-      const pc = createPeerConnection(socketId, false);
+      // Only create a peer connection if it doesn't exist (receiver)
+      const pc = peers[socketId] || createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       // After setting remote description, add any queued candidates
       if (pendingCandidates[socketId]) {
@@ -107,7 +109,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Received answer from", socketId, answer);
       setPeers((prev) => {
         const pc = prev[socketId];
-        if (pc) {
+        if (pc && pc.signalingState !== "stable") {
           pc.setRemoteDescription(new RTCSessionDescription(answer));
           // After setting remote description, add any queued candidates
           if (pendingCandidates[socketId]) {
@@ -170,7 +172,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     if (peers[socketId]) return peers[socketId];
     if (!localStreamRef.current) {
       console.warn("No local stream available when creating peer connection");
-      return;
+      return null;
     }
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current));
