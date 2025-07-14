@@ -44,6 +44,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
   const [isMuted, setIsMuted] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [pendingCandidates, setPendingCandidates] = useState({});
 
   // Get camera/mic and connect to signaling server
   useEffect(() => {
@@ -84,6 +85,17 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Received offer from", socketId, offer);
       const pc = createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      // After setting remote description, add any queued candidates
+      if (pendingCandidates[socketId]) {
+        pendingCandidates[socketId].forEach((c) => {
+          pc.addIceCandidate(new RTCIceCandidate(c));
+        });
+        setPendingCandidates((prevQ) => {
+          const newQ = { ...prevQ };
+          delete newQ[socketId];
+          return newQ;
+        });
+      }
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       if (socketRef.current) {
@@ -95,7 +107,20 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Received answer from", socketId, answer);
       setPeers((prev) => {
         const pc = prev[socketId];
-        if (pc) pc.setRemoteDescription(new RTCSessionDescription(answer));
+        if (pc) {
+          pc.setRemoteDescription(new RTCSessionDescription(answer));
+          // After setting remote description, add any queued candidates
+          if (pendingCandidates[socketId]) {
+            pendingCandidates[socketId].forEach((c) => {
+              pc.addIceCandidate(new RTCIceCandidate(c));
+            });
+            setPendingCandidates((prevQ) => {
+              const newQ = { ...prevQ };
+              delete newQ[socketId];
+              return newQ;
+            });
+          }
+        }
         return prev;
       });
     });
@@ -103,7 +128,17 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Received ICE candidate from", socketId, candidate);
       setPeers((prev) => {
         const pc = prev[socketId];
-        if (pc && candidate) pc.addIceCandidate(new RTCIceCandidate(candidate));
+        if (pc && candidate) {
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            // Queue the candidate
+            setPendingCandidates((prevQ) => ({
+              ...prevQ,
+              [socketId]: [...(prevQ[socketId] || []), candidate],
+            }));
+          }
+        }
         return prev;
       });
     });
