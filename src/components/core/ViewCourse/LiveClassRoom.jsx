@@ -109,7 +109,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Received answer from", socketId, answer);
       setPeers((prev) => {
         const pc = prev[socketId];
-        if (pc && pc.signalingState !== "stable") {
+        if (pc && pc.signalingState === "have-local-offer") {
           pc.setRemoteDescription(new RTCSessionDescription(answer));
           // After setting remote description, add any queued candidates
           if (pendingCandidates[socketId]) {
