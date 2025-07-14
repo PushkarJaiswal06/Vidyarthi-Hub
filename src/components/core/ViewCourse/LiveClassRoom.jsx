@@ -3,7 +3,14 @@ import io from "socket.io-client";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const SIGNALING_SERVER_URL = process.env.REACT_APP_SIGNALING_SERVER_URL || "http://localhost:5000";
-const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
+];
 const REACTIONS = ["👍", "👏", "😂", "😮", "❤️"];
 const COLORS = ["#fff", "#f87171", "#34d399", "#60a5fa", "#fbbf24", "#a78bfa"];
 
