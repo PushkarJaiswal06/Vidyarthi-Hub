@@ -19,6 +19,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
   const socketRef = useRef(null);
   const localStreamRef = useRef(null);
   const localVideoRef = useRef(null);
+  const remoteVideoRefs = useRef({});
   const chatEndRef = useRef(null);
   const [isSharingScreen, setIsSharingScreen] = useState(false);
   const screenStreamRef = useRef(null);
@@ -75,36 +76,53 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     socket.on("user-joined", ({ userId: newUserId, socketId }) => {
       console.log("User joined:", newUserId, "socketId:", socketId);
       if (socket.id === socketId) return;
+      // Always create a peer connection for both initiator and receiver
       createPeerConnection(socketId, true);
+      createPeerConnection(socketId, false);
     });
     socket.on("offer", async ({ offer, socketId }) => {
-      console.log("Received offer from", socketId);
+      console.log("Received offer from", socketId, offer);
       const pc = createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      if (socketRef.current) socketRef.current.emit("answer", { roomId, answer, userId, to: socketId });
+      if (socketRef.current) {
+        console.log("Sending answer to", socketId, answer);
+        socketRef.current.emit("answer", { roomId, answer, userId, to: socketId });
+      }
     });
     socket.on("answer", async ({ answer, socketId }) => {
-      console.log("Received answer from", socketId);
-      const pc = peers[socketId];
-      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      console.log("Received answer from", socketId, answer);
+      setPeers((prev) => {
+        const pc = prev[socketId];
+        if (pc) pc.setRemoteDescription(new RTCSessionDescription(answer));
+        return prev;
+      });
     });
     socket.on("ice-candidate", async ({ candidate, socketId }) => {
-      console.log("Received ICE candidate from", socketId);
-      const pc = peers[socketId];
-      if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      console.log("Received ICE candidate from", socketId, candidate);
+      setPeers((prev) => {
+        const pc = prev[socketId];
+        if (pc && candidate) pc.addIceCandidate(new RTCIceCandidate(candidate));
+        return prev;
+      });
     });
     socket.on("user-left", ({ socketId }) => {
-      if (peers[socketId]) {
-        peers[socketId].close();
-        delete peers[socketId];
-        setPeers({ ...peers });
-        const newStreams = { ...remoteStreams };
+      setPeers((prev) => {
+        if (prev[socketId]) {
+          prev[socketId].close();
+          const newPeers = { ...prev };
+          delete newPeers[socketId];
+          return newPeers;
+        }
+        return prev;
+      });
+      setRemoteStreams((prev) => {
+        const newStreams = { ...prev };
         delete newStreams[socketId];
-        setRemoteStreams(newStreams);
-        setParticipants((prev) => prev.filter((id) => id !== socketId));
-      }
+        return newStreams;
+      });
+      setParticipants((prev) => prev.filter((id) => id !== socketId));
     });
     // Chat events
     socket.on("chat-message", (msg) => {
@@ -123,11 +141,19 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current));
     pc.onicecandidate = (event) => {
       if (event.candidate && socketRef.current) {
+        console.log("Sending ICE candidate to", socketId, event.candidate);
         socketRef.current.emit("ice-candidate", { roomId, candidate: event.candidate, userId, to: socketId });
       }
     };
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state for", socketId, ":", pc.iceConnectionState);
+    };
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state for", socketId, ":", pc.connectionState);
+    };
     pc.ontrack = (event) => {
       console.log("Received remote track from", socketId, event.streams[0]);
+      console.log("Remote stream tracks:", event.streams[0]?.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
       setRemoteStreams((prev) => ({ ...prev, [socketId]: event.streams[0] }));
       setParticipants((prev) => prev.includes(socketId) ? prev : [...prev, socketId]);
     };
@@ -135,7 +161,10 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       pc.onnegotiationneeded = async () => {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        if (socketRef.current) socketRef.current.emit("offer", { roomId, offer, userId, to: socketId });
+        if (socketRef.current) {
+          console.log("Sending offer to", socketId, offer);
+          socketRef.current.emit("offer", { roomId, offer, userId, to: socketId });
+        }
       };
     }
     setPeers((prev) => ({ ...prev, [socketId]: pc }));
@@ -181,6 +210,19 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages]);
+
+  // Attach remote streams to video elements
+  useEffect(() => {
+    Object.entries(remoteStreams).forEach(([socketId, stream]) => {
+      const videoElement = remoteVideoRefs.current[socketId];
+      if (videoElement && stream) {
+        console.log("Attaching remote stream to video element for", socketId);
+        videoElement.srcObject = stream;
+        // Ensure the video plays
+        videoElement.play().catch(e => console.log("Video play error:", e));
+      }
+    });
+  }, [remoteStreams]);
 
   // Screen sharing logic
   const startScreenShare = async () => {
@@ -569,6 +611,8 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
           <div className="mb-2">User: <span className="text-cyan-300">{userName || userId}</span></div>
           <div className="mb-2">Participants: <span className="text-cyan-300">{participants.length + 1}</span></div>
           <div className="mb-2">Signaling Server: <span className="text-cyan-300">{connected ? "Connected" : "Connecting..."}</span></div>
+          <div className="mb-2">Remote Streams: <span className="text-cyan-300">{Object.keys(remoteStreams).length}</span></div>
+          <div className="mb-2">Peer Connections: <span className="text-cyan-300">{Object.keys(peers).length}</span></div>
           {error && <div className="text-red-400 mb-2">{error}</div>}
           <div className="flex flex-wrap gap-6 justify-center items-center w-full mb-4">
             {/* Local video */}
@@ -580,12 +624,20 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
             {Object.entries(remoteStreams).map(([id, stream]) => (
               <div key={id} className="flex flex-col items-center">
                 <video
+                  ref={(el) => {
+                    remoteVideoRefs.current[id] = el;
+                    if (el && stream) {
+                      console.log("Setting srcObject for remote video", id);
+                      el.srcObject = stream;
+                      el.play().catch(e => console.log("Remote video play error:", e));
+                    }
+                  }}
                   autoPlay
                   playsInline
                   className="rounded-lg border border-cyan-400 w-64 h-48 bg-black"
-                  ref={(el) => { if (el) el.srcObject = stream; }}
                 />
-                <div className="text-cyan-200 mt-2">Participant</div>
+                <div className="text-cyan-200 mt-2">Participant {id.slice(-4)}</div>
+                <div className="text-xs text-cyan-100/60">Stream: {stream ? 'Active' : 'No stream'}</div>
               </div>
             ))}
           </div>
