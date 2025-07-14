@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const SIGNALING_SERVER_URL = process.env.REACT_APP_SIGNALING_SERVER_URL || "http://localhost:5000";
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
@@ -40,8 +41,10 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
   const canvasRef = useRef(null);
   const [mutedUsers, setMutedUsers] = useState([]); // [userId]
   const [isMuted, setIsMuted] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Get camera/mic
+  // Get camera/mic and connect to signaling server
   useEffect(() => {
     (async () => {
       try {
@@ -50,15 +53,17 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
+        // Now connect to signaling server
+        if (!socketRef.current) {
+          connectToSignalingServer();
+        }
       } catch (e) {
         setError("Could not access camera/mic");
       }
     })();
   }, []);
 
-  // Connect to signaling server and handle WebRTC and chat
-  useEffect(() => {
-    if (!localStreamRef.current) return;
+  function connectToSignalingServer() {
     console.log("Connecting to signaling server:", SIGNALING_SERVER_URL);
     socketRef.current = io(SIGNALING_SERVER_URL, { transports: ["websocket"] });
     const socket = socketRef.current;
@@ -73,17 +78,20 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       createPeerConnection(socketId, true);
     });
     socket.on("offer", async ({ offer, socketId }) => {
+      console.log("Received offer from", socketId);
       const pc = createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      socket.emit("answer", { roomId, answer, userId, to: socketId });
+      if (socketRef.current) socketRef.current.emit("answer", { roomId, answer, userId, to: socketId });
     });
     socket.on("answer", async ({ answer, socketId }) => {
+      console.log("Received answer from", socketId);
       const pc = peers[socketId];
       if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
     });
     socket.on("ice-candidate", async ({ candidate, socketId }) => {
+      console.log("Received ICE candidate from", socketId);
       const pc = peers[socketId];
       if (pc && candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
     });
@@ -102,27 +110,24 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     socket.on("chat-message", (msg) => {
       setChatMessages((prev) => [...prev, msg]);
     });
-    return () => {
-      socket.disconnect();
-      Object.values(peers).forEach((pc) => pc.close());
-      setPeers({});
-      setRemoteStreams({});
-      setParticipants([]);
-    };
-    // eslint-disable-next-line
-  }, [localStreamRef.current]);
+  }
 
   // Create peer connection
   function createPeerConnection(socketId, isInitiator) {
     if (peers[socketId]) return peers[socketId];
+    if (!localStreamRef.current) {
+      console.warn("No local stream available when creating peer connection");
+      return;
+    }
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current));
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
+      if (event.candidate && socketRef.current) {
         socketRef.current.emit("ice-candidate", { roomId, candidate: event.candidate, userId, to: socketId });
       }
     };
     pc.ontrack = (event) => {
+      console.log("Received remote track from", socketId, event.streams[0]);
       setRemoteStreams((prev) => ({ ...prev, [socketId]: event.streams[0] }));
       setParticipants((prev) => prev.includes(socketId) ? prev : [...prev, socketId]);
     };
@@ -130,7 +135,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       pc.onnegotiationneeded = async () => {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        socketRef.current.emit("offer", { roomId, offer, userId, to: socketId });
+        if (socketRef.current) socketRef.current.emit("offer", { roomId, offer, userId, to: socketId });
       };
     }
     setPeers((prev) => ({ ...prev, [socketId]: pc }));
@@ -147,6 +152,12 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
     setPeers({});
     setRemoteStreams({});
     setParticipants([]);
+    // Redirect to previous page if available, else fallback
+    if (location.state && location.state.from) {
+      navigate(location.state.from);
+    } else {
+      navigate(-1);
+    }
   };
 
   // Send chat message
@@ -159,7 +170,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       text: chatInput,
       timestamp: new Date().toISOString(),
     };
-    socketRef.current.emit("chat-message", { roomId, ...msg });
+    if (socketRef.current) socketRef.current.emit("chat-message", { roomId, ...msg });
     setChatMessages((prev) => [...prev, { ...msg, self: true }]);
     setChatInput("");
   };
@@ -255,7 +266,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       votes: Array(pollOptions.length).fill(0),
       voters: [],
     };
-    socketRef.current.emit("launch-poll", { roomId, poll });
+    if (socketRef.current) socketRef.current.emit("launch-poll", { roomId, poll });
     setActivePoll(poll);
     setPollModalOpen(false);
     setPollQuestion("");
@@ -265,7 +276,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
 
   const votePoll = (optionIdx) => {
     if (!activePoll || hasVoted) return;
-    socketRef.current.emit("vote-poll", { roomId, optionIdx, userId });
+    if (socketRef.current) socketRef.current.emit("vote-poll", { roomId, optionIdx, userId });
     setHasVoted(true);
   };
 
@@ -294,19 +305,19 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
   }, [socketRef.current]);
 
   const endPoll = () => {
-    socketRef.current.emit("end-poll", { roomId });
+    if (socketRef.current) socketRef.current.emit("end-poll", { roomId });
   };
 
   // Hand raise logic
   const raiseHand = () => {
-    socketRef.current.emit("raise-hand", { roomId, userId, userName });
+    if (socketRef.current) socketRef.current.emit("raise-hand", { roomId, userId, userName });
   };
   const lowerHand = () => {
-    socketRef.current.emit("lower-hand", { roomId, userId });
+    if (socketRef.current) socketRef.current.emit("lower-hand", { roomId, userId });
   };
   // Reaction logic
   const sendReaction = (emoji) => {
-    socketRef.current.emit("send-reaction", { roomId, emoji, userName });
+    if (socketRef.current) socketRef.current.emit("send-reaction", { roomId, emoji, userName });
   };
 
   // Socket.io hand raise & reaction events
@@ -348,7 +359,7 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       return updated;
     });
     // Emit draw event
-    socketRef.current.emit("whiteboard-draw", { roomId, x1: x, y1: y });
+    if (socketRef.current) socketRef.current.emit("whiteboard-draw", { roomId, x1: x, y1: y });
   };
   const handleMouseUp = () => setDrawing(false);
 
@@ -389,30 +400,30 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
   useEffect(() => {
     if (!socketRef.current) return;
     if (drawing) {
-      socketRef.current.emit("whiteboard-update", { roomId, data: whiteboardData });
+      if (socketRef.current) socketRef.current.emit("whiteboard-update", { roomId, data: whiteboardData });
     }
   }, [whiteboardData, drawing]);
 
   const clearWhiteboard = () => {
     setWhiteboardData([]);
-    socketRef.current.emit("whiteboard-clear", { roomId });
+    if (socketRef.current) socketRef.current.emit("whiteboard-clear", { roomId });
   };
 
   // Mute/unmute logic
   const muteAll = () => {
-    socketRef.current.emit("mute-all", { roomId });
+    if (socketRef.current) socketRef.current.emit("mute-all", { roomId });
   };
   const unmuteAll = () => {
-    socketRef.current.emit("unmute-all", { roomId });
+    if (socketRef.current) socketRef.current.emit("unmute-all", { roomId });
   };
   const muteUser = (uid) => {
-    socketRef.current.emit("mute-user", { roomId, userId: uid });
+    if (socketRef.current) socketRef.current.emit("mute-user", { roomId, userId: uid });
   };
   const unmuteUser = (uid) => {
-    socketRef.current.emit("unmute-user", { roomId, userId: uid });
+    if (socketRef.current) socketRef.current.emit("unmute-user", { roomId, userId: uid });
   };
   const requestUnmute = () => {
-    socketRef.current.emit("request-unmute", { roomId, userId, userName });
+    if (socketRef.current) socketRef.current.emit("request-unmute", { roomId, userId, userName });
   };
 
   // Socket.io mute events
