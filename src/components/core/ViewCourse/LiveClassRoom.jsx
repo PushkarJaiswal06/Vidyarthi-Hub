@@ -187,9 +187,14 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
       console.log("Connection state for", socketId, ":", pc.connectionState);
     };
     pc.ontrack = (event) => {
-      console.log("Received remote track from", socketId, event.streams[0]);
-      console.log("Remote stream tracks:", event.streams[0]?.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
-      setRemoteStreams((prev) => ({ ...prev, [socketId]: event.streams[0] }));
+      const stream = event.streams[0];
+      console.log("Received remote track from", socketId, stream);
+      if (stream) {
+        stream.getTracks().forEach(track => {
+          console.log(`[Remote] Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}, muted: ${track.muted}`);
+        });
+      }
+      setRemoteStreams((prev) => ({ ...prev, [socketId]: stream }));
       setParticipants((prev) => prev.includes(socketId) ? prev : [...prev, socketId]);
     };
     if (isInitiator) {
@@ -656,25 +661,32 @@ export default function LiveClassRoom({ roomId, userId, userName, isInstructor }
               <div className="text-cyan-200 mt-2">You</div>
             </div>
             {/* Remote videos */}
-            {Object.entries(remoteStreams).map(([id, stream]) => (
-              <div key={id} className="flex flex-col items-center">
-                <video
-                  ref={(el) => {
-                    remoteVideoRefs.current[id] = el;
-                    if (el && stream) {
-                      console.log("Setting srcObject for remote video", id);
-                      el.srcObject = stream;
-                      el.play().catch(e => console.log("Remote video play error:", e));
-                    }
-                  }}
-                  autoPlay
-                  playsInline
-                  className="rounded-lg border border-cyan-400 w-64 h-48 bg-black"
-                />
-                <div className="text-cyan-200 mt-2">Participant {id.slice(-4)}</div>
-                <div className="text-xs text-cyan-100/60">Stream: {stream ? 'Active' : 'No stream'}</div>
-              </div>
-            ))}
+            {Object.entries(remoteStreams).map(([id, stream]) => {
+              const videoTrack = stream?.getVideoTracks?.()[0];
+              return (
+                <div key={id} className="flex flex-col items-center">
+                  <video
+                    ref={el => {
+                      remoteVideoRefs.current[id] = el;
+                      if (el && stream && el.srcObject !== stream) {
+                        el.srcObject = stream;
+                        el.play().catch(e => {
+                          if (e.name !== 'AbortError') console.log('Remote video play error:', e);
+                        });
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    className="rounded-lg border border-cyan-400 w-64 h-48 bg-black"
+                  />
+                  <div className="text-cyan-200 mt-2">Participant {id.slice(-4)}</div>
+                  <div className="text-xs text-cyan-100/60">
+                    Stream: {stream ? 'Active' : 'No stream'}<br/>
+                    Video track: {videoTrack ? `enabled=${videoTrack.enabled}, state=${videoTrack.readyState}, muted=${videoTrack.muted}` : 'none'}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <button
             className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-full font-semibold shadow transition-all mb-4"
