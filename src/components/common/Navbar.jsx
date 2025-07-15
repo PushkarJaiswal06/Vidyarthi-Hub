@@ -190,7 +190,7 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/dashboard/my-profile">
+                <Link to="/dashboard/instructor">
                   <button
                     className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-300"
                   >

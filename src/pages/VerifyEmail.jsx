@@ -47,20 +47,18 @@ function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] grid place-items-center">
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gradient-to-br from-richblack-900 via-purple-900 to-richblack-800 px-4">
       {loading ? (
         <div>
           <div className="spinner"></div>
         </div>
       ) : (
-        <div className="max-w-[500px] p-4 lg:p-8">
-          <h1 className="text-richblack-5 font-semibold text-[1.875rem] leading-[2.375rem]">
-            Verify Email
-          </h1>
-          <p className="text-[1.125rem] leading-[1.625rem] my-4 text-richblack-100">
-            A verification code has been sent to you. Enter the code below
+        <div className="glass rounded-3xl shadow-neon p-8 flex flex-col items-center max-w-md w-full backdrop-blur-md">
+          <h1 className="text-white font-extrabold text-3xl mb-2 drop-shadow-lg text-center">Verify Email</h1>
+          <p className="text-cyan-100 text-lg mb-6 text-center">
+            A verification code has been sent to your email. Enter the code below to verify your account.
           </p>
-          <form onSubmit={handleVerifyAndSignup}>
+          <form onSubmit={handleVerifyAndSignup} className="w-full flex flex-col items-center">
             <OtpInput
               value={otp}
               onChange={setOtp}
@@ -72,29 +70,27 @@ function VerifyEmail() {
                   style={{
                     boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
                   }}
-                  className="w-[48px] lg:w-[60px] border-0 bg-richblack-800 rounded-[0.5rem] text-richblack-5 aspect-square text-center focus:border-0 focus:outline-2 focus:outline-yellow-50"
+                  className="w-12 lg:w-14 border-0 bg-richblack-800/80 rounded-lg text-white aspect-square text-center text-2xl font-bold focus:border-0 focus:outline-2 focus:outline-cyan-400 transition-all duration-200"
                 />
               )}
               containerStyle={{
                 justifyContent: "space-between",
-                gap: "0 6px",
+                gap: "0 8px",
               }}
             />
             <button
               type="submit"
-              className="w-full bg-yellow-50 py-[12px] px-[12px] rounded-[8px] mt-6 font-medium text-richblack-900"
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 px-4 rounded-full mt-8 font-semibold text-lg shadow-neon hover:from-purple-600 hover:to-blue-600 transition-all duration-300"
             >
               Verify Email
             </button>
           </form>
-          <div className="mt-6 flex items-center justify-between">
-            <Link to="/signup">
-              <p className="text-richblack-5 flex items-center gap-x-2">
-                <BiArrowBack /> Back To Signup
-              </p>
+          <div className="mt-8 flex items-center justify-between w-full">
+            <Link to="/signup" className="text-cyan-300 hover:underline flex items-center gap-x-2 text-base">
+              <BiArrowBack /> Back To Signup
             </Link>
             <button
-              className="flex items-center text-blue-100 gap-x-2"
+              className="flex items-center text-purple-300 hover:text-purple-400 gap-x-2 text-base underline underline-offset-2 transition-colors duration-200"
               onClick={() => dispatch(sendOtp(signupData.email))}
             >
               <RxCountdownTimer />
