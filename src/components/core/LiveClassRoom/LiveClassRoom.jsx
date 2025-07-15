@@ -49,9 +49,9 @@ const LiveClassRoom = ({ classId }) => {
   const mediaRecorderRef = useRef(null);
 
   // --- WebRTC Peer Connection Logic ---
-  // (Reusing logic from your previous implementation)
   const [peers, setPeers] = useState({});
   const [pendingCandidates, setPendingCandidates] = useState({});
+  const [mySocketId, setMySocketId] = useState(null);
 
   // Helper: Create peer connection
   const createPeerConnection = (socketId, isInitiator) => {
@@ -127,6 +127,9 @@ const LiveClassRoom = ({ classId }) => {
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
       Object.values(peersRef.current).forEach((pc) => pc.close());
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
     // eslint-disable-next-line
   }, [user]);
@@ -139,6 +142,7 @@ const LiveClassRoom = ({ classId }) => {
     });
     const socket = socketRef.current;
     socket.on("connect", () => {
+      setMySocketId(socket.id);
       socket.emit("join-room", {
         roomId: classId,
         userId: user._id,
@@ -146,12 +150,24 @@ const LiveClassRoom = ({ classId }) => {
         isInstructor,
       });
     });
-    socket.on("participants", (list) => setParticipants(list));
+    // On receiving the full participant list (with socketId)
+    socket.on("participants", (list) => {
+      setParticipants(list);
+      // On join, connect to all existing participants (except self)
+      list.forEach((p) => {
+        if (p.socketId !== socket.id && !peersRef.current[p.socketId]) {
+          createPeerConnection(p.socketId, true);
+        }
+      });
+    });
     socket.on("chat-message", (msg) => setChatMessages((prev) => [...prev, msg]));
     // --- WebRTC signaling ---
-    socket.on("user-joined", ({ userId: newUserId, socketId }) => {
+    socket.on("user-joined", ({ userId: newUserId, userName, socketId, isInstructor: joinedIsInstructor }) => {
       if (socket.id === socketId) return;
-      createPeerConnection(socketId, true);
+      // New user joined, create peer connection as responder
+      if (!peersRef.current[socketId]) {
+        createPeerConnection(socketId, false);
+      }
     });
     socket.on("offer", async ({ offer, socketId }) => {
       const pc = peersRef.current[socketId] || createPeerConnection(socketId, false);
@@ -414,6 +430,9 @@ const LiveClassRoom = ({ classId }) => {
   const handleLeave = () => {
     if (socketRef.current) socketRef.current.disconnect();
     Object.values(peersRef.current).forEach((pc) => pc.close());
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+    }
     navigate("/dashboard/live-classes");
   };
 
@@ -464,10 +483,10 @@ const LiveClassRoom = ({ classId }) => {
       <div className="flex flex-1 flex-col md:flex-row overflow-hidden">
         <div className="flex-grow flex flex-col items-center md:items-start md:justify-start p-2 md:p-6">
           <div className="flex justify-center w-full md:max-w-xl mx-auto mt-4 md:mt-8">
-            <InstructorVideo instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }} stream={isInstructor ? localStream : null} />
+            <InstructorVideo instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }} stream={isInstructor ? localStream : (participants.find(p => p.isInstructor && p.socketId !== mySocketId) ? remoteStreams[participants.find(p => p.isInstructor && p.socketId !== mySocketId).socketId] : null)} />
           </div>
           <div className="w-full md:max-w-xl mx-auto">
-            <StudentVideoBar participants={participants.map((p) => ({ ...p, stream: remoteStreams[p._id] }))} />
+            <StudentVideoBar participants={participants.filter(p => !p.isInstructor && p.socketId !== mySocketId).map((p) => ({ ...p, stream: remoteStreams[p.socketId] }))} />
           </div>
         </div>
         <div className="w-full md:w-96 h-auto border-l border-gray-200 bg-white">

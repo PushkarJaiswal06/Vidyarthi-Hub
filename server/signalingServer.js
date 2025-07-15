@@ -18,15 +18,36 @@ const io = new Server(server, {
 
 const roomState = {};
 
+function getRoomParticipants(roomId) {
+  const sockets = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+  return sockets.map(id => {
+    const s = io.sockets.sockets.get(id);
+    return s ? {
+      socketId: s.id,
+      userId: s.userId,
+      userName: s.userName,
+      isInstructor: s.isInstructor
+    } : null;
+  }).filter(Boolean);
+}
+
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
   // Join a live class room
-  socket.on('join-room', ({ roomId, userId, userName }) => {
+  socket.on('join-room', ({ roomId, userId, userName, isInstructor }) => {
     console.log(`User ${userName || userId} (${userId}) joining room ${roomId}`);
     socket.join(roomId);
     socket.userId = userId; // Store userId for reference
-    socket.to(roomId).emit('user-joined', { userId, socketId: socket.id });
+    socket.userName = userName;
+    socket.isInstructor = isInstructor;
+    // Send the new user the list of existing participants
+    const existingParticipants = getRoomParticipants(roomId).filter(p => p.socketId !== socket.id);
+    socket.emit('participants', existingParticipants);
+    // Notify others about the new user
+    socket.to(roomId).emit('user-joined', { userId, userName, socketId: socket.id, isInstructor });
+    // Update all with the new participant list
+    io.to(roomId).emit('participants', getRoomParticipants(roomId));
     console.log(`${userId} joined room ${roomId}`);
   });
 
@@ -137,6 +158,10 @@ io.on('connection', (socket) => {
     rooms.forEach(roomId => {
       if (roomId !== socket.id) {
         socket.to(roomId).emit('user-left', { socketId: socket.id });
+        // Update all with the new participant list
+        setTimeout(() => {
+          io.to(roomId).emit('participants', getRoomParticipants(roomId));
+        }, 100);
       }
     });
   });
