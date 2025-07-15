@@ -105,7 +105,9 @@ exports.getLiveClassesForInstructor = async (req, res) => {
   try {
     const instructorId = req.user.id;
     console.log('Instructor ID:', instructorId);
-    const liveClasses = await LiveClass.find({ instructor: instructorId }).sort({ scheduledAt: -1 });
+    const liveClasses = await LiveClass.find({ instructor: instructorId })
+      .populate('course')
+      .sort({ scheduledAt: -1 });
     console.log('Live classes found:', liveClasses.length);
     res.json({ success: true, data: liveClasses });
   } catch (error) {
@@ -122,7 +124,9 @@ exports.getLiveClassesForStudent = async (req, res) => {
     const courses = await Course.find({ studentsEnrolled: userId });
     const courseIds = courses.map(c => c._id);
     // Find all live classes for those courses
-    const liveClasses = await LiveClass.find({ course: { $in: courseIds } }).sort({ scheduledAt: 1 });
+    const liveClasses = await LiveClass.find({ course: { $in: courseIds } })
+      .populate('course')
+      .sort({ scheduledAt: 1 });
     res.json({ success: true, data: liveClasses });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
