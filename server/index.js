@@ -40,6 +40,7 @@ app.use(
 		origin: [
 			"http://localhost:3000", // for local dev
 			"https://vidyarthi-hub-v2-frontend.onrender.com", // Render frontend
+			"https://vidyarthi-hub-v2-frontend.vercel.app", // Vercel frontend (added)
 			"https://vidyarthi-hub.xyz", // custom domain
 			"https://www.vidyarthi-hub.xyz" // www custom domain
 		],
@@ -102,6 +103,7 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "https://vidyarthi-hub-seven.vercel.app",
+      "https://vidyarthi-hub-v2-frontend.vercel.app", // Vercel frontend (added)
       "https://www.vidyarthi-hub.xyz"
     ],
     methods: ["GET", "POST"]
