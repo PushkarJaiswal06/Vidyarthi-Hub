@@ -1,3 +1,6 @@
+// ARCHIVED: This file is deprecated and replaced by src/components/core/LiveClassRoom/LiveClassRoom.jsx
+// All new features, bugfixes, and maintenance should be done in the new modular implementation.
+// This file is kept for reference only and can be deleted in the future.
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import { useNavigate, useLocation } from "react-router-dom";

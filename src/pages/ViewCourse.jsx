@@ -12,7 +12,7 @@ import {
   setEntireCourseData,
   setTotalNoOfLectures,
 } from "../slices/viewCourseSlice"
-import LiveClassRoom from "../components/core/ViewCourse/LiveClassRoom"
+import LiveClassRoom from "../components/core/LiveClassRoom/LiveClassRoom";
 import Tab from "../components/common/Tab";
 
 export default function ViewCourse() {
@@ -81,7 +81,7 @@ export default function ViewCourse() {
     const fetchLiveClasses = async () => {
       setLiveLoading(true);
       try {
-        const BASE_URL = process.env.REACT_APP_BASE_URL;
+        const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api/v1";
         const res = await fetch(`${BASE_URL}/liveclass/course/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -204,7 +204,7 @@ export default function ViewCourse() {
       </main>
       {/* Live Class Room Modal */}
       {activeLiveClass && user && (
-        <LiveClassRoom roomId={activeLiveClass._id} userId={user._id} userName={user.firstName + ' ' + user.lastName} isInstructor={user.accountType === 'Instructor'} />
+        <LiveClassRoom classId={activeLiveClass._id} />
       )}
       {/* Review Modal */}
       {reviewModal && <CourseReviewModal setReviewModal={setReviewModal} />}

@@ -1,11 +1,12 @@
 import { useParams, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-import LiveClassRoom from "../components/core/ViewCourse/LiveClassRoom";
+import LiveClassRoom from "../components/core/LiveClassRoom/LiveClassRoom";
 
 export default function LiveClassRoomWrapper() {
   const { id } = useParams();
   const { user } = useSelector((state) => state.profile);
+  const { token } = useSelector((state) => state.auth);
   const location = useLocation();
   const [liveClass, setLiveClass] = useState(location.state?.liveClass || null);
   const [loading, setLoading] = useState(!user || !liveClass);
@@ -14,9 +15,9 @@ export default function LiveClassRoomWrapper() {
     if (!user) return;
     if (!liveClass) {
       setLoading(true);
-      const BASE_URL = process.env.REACT_APP_BASE_URL;
+      const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api/v1";
       fetch(`${BASE_URL}/liveclass/${id}`, {
-        headers: { Authorization: `Bearer ${user.token}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
         .then((data) => {
@@ -38,12 +39,6 @@ export default function LiveClassRoomWrapper() {
   }
 
   return (
-    <LiveClassRoom
-      roomId={id}
-      userId={user._id}
-      userName={user.firstName + ' ' + user.lastName}
-      isInstructor={user.accountType === 'Instructor'}
-      liveClass={liveClass}
-    />
+    <LiveClassRoom classId={id} />
   );
 } 

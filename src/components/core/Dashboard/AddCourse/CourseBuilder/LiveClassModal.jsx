@@ -14,7 +14,7 @@ export default function LiveClassModal({ courseId, setModalOpen, onScheduled }) 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const BASE_URL = process.env.REACT_APP_BASE_URL;
+      const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5000/api/v1";
       // Convert datetime-local input (assumed to be IST) to UTC ISO string
       // Parse as if input is IST
       const istDate = new Date(data.scheduledAt + ':00'); // 'YYYY-MM-DDTHH:mm' -> 'YYYY-MM-DDTHH:mm:00'
