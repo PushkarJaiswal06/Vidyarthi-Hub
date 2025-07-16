@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import io from "socket.io-client";
 import TopBar from "./TopBar";
 import InstructorVideo from "./InstructorVideo";
-import StudentVideoBar from "./StudentVideoBar";
 import BottomBar from "./BottomBar";
 import Sidebar from "./Sidebar/Sidebar";
 import WhiteboardModal from "./Modals/WhiteboardModal";
@@ -13,6 +12,7 @@ import RecordingIndicator from "./Modals/RecordingIndicator";
 import ReactionsPanel from "./Modals/ReactionsPanel";
 import ChatTab from "./Sidebar/ChatTab";
 import ParticipantsTab from "./Sidebar/ParticipantsTab";
+import ExcalidrawWhiteboard from "./ExcalidrawWhiteboard";
 
 const SIGNALING_SERVER_URL = process.env.REACT_APP_SIGNALING_SERVER_URL || "http://localhost:5000";
 const ICE_SERVERS = [
@@ -47,6 +47,8 @@ const LiveClassRoom = ({ classId }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedChunks, setRecordedChunks] = useState([]);
   const mediaRecorderRef = useRef(null);
+  const [notification, setNotification] = useState(null);
+  const [sidebarTab, setSidebarTab] = useState("Chat"); // Track active sidebar tab
 
   // --- WebRTC Peer Connection Logic ---
   const [peers, setPeers] = useState({});
@@ -86,6 +88,9 @@ const LiveClassRoom = ({ classId }) => {
   const socketRef = useRef(null);
   const localStreamRef = useRef(null);
   const peersRef = useRef({});
+  const canvasRef = useRef(null);
+  const ctx = useRef(null);
+  const currentDrawing = useRef({ type: "start", x: 0, y: 0 });
 
   // --- Whiteboard State ---
   const [whiteboardData, setWhiteboardData] = useState([]);
@@ -94,7 +99,8 @@ const LiveClassRoom = ({ classId }) => {
   const [drawing, setDrawing] = useState(false);
 
   // --- Polls State ---
-  const [poll, setPoll] = useState(null);
+  const [pollHistory, setPollHistory] = useState([]); // All polls for this class
+  const [activePoll, setActivePoll] = useState(null); // Current poll
   const [pollResults, setPollResults] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
@@ -103,6 +109,9 @@ const LiveClassRoom = ({ classId }) => {
   // --- Reactions State ---
   const [showReaction, setShowReaction] = useState(null);
 
+  // --- Whiteboard Scene State for Real-Time Sync ---
+  const [whiteboardScene, setWhiteboardScene] = useState([]);
+
   // Set instructor status from Redux user
   useEffect(() => {
     if (user) {
@@ -110,12 +119,82 @@ const LiveClassRoom = ({ classId }) => {
     }
   }, [user]);
 
+  // Listen for whiteboard scene updates from instructor (for students)
+  useEffect(() => {
+    if (!isInstructor && socketRef.current) {
+      const handler = ({ elements }) => setWhiteboardScene(elements);
+      socketRef.current.on("whiteboard-scene-update", handler);
+      return () => socketRef.current.off("whiteboard-scene-update", handler);
+    }
+  }, [isInstructor]);
+
+  // Listen for poll events
+  useEffect(() => {
+    if (!socketRef.current) return;
+    // When a new poll is launched
+    const handlePollLaunched = (poll) => {
+      setActivePoll(poll);
+      setHasVoted(false);
+      setPollResults(null);
+      setPollHistory((prev) => [...prev, poll]);
+    };
+    // When a poll is updated (votes)
+    const handlePollUpdated = (poll) => {
+      setActivePoll(poll);
+      setPollHistory((prev) => prev.map(p => p.question === poll.question ? poll : p));
+    };
+    // When a poll ends
+    const handlePollEnded = (results) => {
+      setPollResults(results);
+      setActivePoll(null);
+      setPollHistory((prev) => prev.map(p => p.question === results.question ? results : p));
+      setHasVoted(false);
+    };
+    socketRef.current.on("poll-launched", handlePollLaunched);
+    socketRef.current.on("poll-updated", handlePollUpdated);
+    socketRef.current.on("poll-ended", handlePollEnded);
+    return () => {
+      socketRef.current.off("poll-launched", handlePollLaunched);
+      socketRef.current.off("poll-updated", handlePollUpdated);
+      socketRef.current.off("poll-ended", handlePollEnded);
+    };
+  }, [socketRef.current]);
+
+  // Listen for poll and whiteboard events for notifications
+  useEffect(() => {
+    if (!socketRef.current) return;
+    const handlePollLaunched = (poll) => {
+      setNotification("A new poll has been created!");
+      setTimeout(() => setNotification(null), 3000);
+    };
+    const handleWhiteboardOpened = () => {
+      setNotification("Whiteboard has been opened!");
+      setTimeout(() => setNotification(null), 3000);
+    };
+    socketRef.current.on("poll-launched", handlePollLaunched);
+    socketRef.current.on("whiteboard-opened", handleWhiteboardOpened);
+    return () => {
+      socketRef.current.off("poll-launched", handlePollLaunched);
+      socketRef.current.off("whiteboard-opened", handleWhiteboardOpened);
+    };
+  }, [socketRef.current]);
+
+  // Emit whiteboard-opened event when whiteboard is opened
+  useEffect(() => {
+    if (whiteboardOpen && socketRef.current) {
+      socketRef.current.emit("whiteboard-opened", { roomId: classId });
+    }
+  }, [whiteboardOpen, classId]);
+
   // Get camera/mic and connect to signaling server
   useEffect(() => {
     if (!user) return;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        // Only instructor gets video, students get audio only
+        const stream = await navigator.mediaDevices.getUserMedia(
+          isInstructor ? { video: true, audio: true } : { video: false, audio: true }
+        );
         setLocalStream(stream);
         localStreamRef.current = stream;
         connectToSignalingServer(stream);
@@ -132,7 +211,7 @@ const LiveClassRoom = ({ classId }) => {
       }
     };
     // eslint-disable-next-line
-  }, [user]);
+  }, [user, isInstructor]);
 
   // Connect to Socket.IO
   const connectToSignalingServer = (stream) => {
@@ -229,22 +308,10 @@ const LiveClassRoom = ({ classId }) => {
       setWhiteboardData([]);
     });
     // --- Polls ---
-    socket.on("poll-launched", (poll) => {
-      setPoll(poll);
-      setHasVoted(false);
-      setPollResults(null);
-      if (user && user.accountType !== 'Instructor') {
-        setPollsOpen(true);
-      }
-    });
-    socket.on("poll-updated", (poll) => {
-      setPoll(poll);
-    });
-    socket.on("poll-ended", (results) => {
-      setPollResults(results);
-      setPoll(null);
-      setHasVoted(false);
-    });
+    // These handlers are now handled by the useEffect above
+    // socket.on("poll-launched", (poll) => { ... });
+    // socket.on("poll-updated", (poll) => { ... });
+    // socket.on("poll-ended", (results) => { ... });
     // --- Reactions ---
     socket.on("show-reaction", ({ emoji, userName }) => {
       setShowReaction({ emoji, userName });
@@ -276,19 +343,37 @@ const LiveClassRoom = ({ classId }) => {
   };
 
   // --- Whiteboard Handlers ---
-  const handleDraw = ({ type, x, y }) => {
-    setWhiteboardData((prev) => {
-      if (type === "start") {
-        return [...prev, { x0: x, y0: y, x1: x, y1: y, color: drawColor, size: drawSize }];
-      } else if (type === "move" && prev.length > 0) {
-        const updated = [...prev];
-        const last = updated[updated.length - 1];
-        updated[updated.length - 1] = { ...last, x1: x, y1: y };
-        return updated;
-      }
-      return prev;
-    });
-    if (socketRef.current) socketRef.current.emit("whiteboard-update", { roomId: classId, data: whiteboardData });
+  const getCanvasCoords = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  };
+
+  const handleMouseDown = (e) => {
+    const { x, y } = getCanvasCoords(e);
+    currentDrawing.current = { x, y };
+    setDrawing(true);
+  };
+  const handleMouseMove = (e) => {
+    if (!drawing) return;
+    const { x, y } = getCanvasCoords(e);
+    const newSegment = {
+      x0: currentDrawing.current.x,
+      y0: currentDrawing.current.y,
+      x1: x,
+      y1: y,
+      color: drawColor,
+      size: drawSize,
+    };
+    setWhiteboardData(prev => [...prev, newSegment]);
+    currentDrawing.current = { x, y };
+    // Optionally emit just the new segment for real-time sync
+    // if (socketRef.current) socketRef.current.emit("whiteboard-segment", { roomId: classId, segment: newSegment });
+  };
+  const handleMouseUp = () => {
+    setDrawing(false);
   };
   const handleClearWhiteboard = () => {
     setWhiteboardData([]);
@@ -304,14 +389,14 @@ const LiveClassRoom = ({ classId }) => {
       voters: [],
     };
     if (socketRef.current) socketRef.current.emit("launch-poll", { roomId: classId, poll: pollObj });
-    setPoll(pollObj);
+    setActivePoll(pollObj);
     setPollsOpen(false);
     setPollQuestion("");
     setPollOptions(["", ""]);
     setHasVoted(false);
   };
   const handleVote = (optionIdx) => {
-    if (!poll || hasVoted) return;
+    if (!activePoll || hasVoted) return;
     if (socketRef.current) socketRef.current.emit("vote-poll", { roomId: classId, optionIdx, userId: user._id });
     setHasVoted(true);
   };
@@ -331,28 +416,48 @@ const LiveClassRoom = ({ classId }) => {
       if (socketRef.current) {
         socketRef.current.off("whiteboard-update");
         socketRef.current.off("whiteboard-clear");
-        socketRef.current.off("poll-launched");
-        socketRef.current.off("poll-updated");
-        socketRef.current.off("poll-ended");
+        // The poll event handlers are now managed by the useEffect above
+        // socketRef.current.off("poll-launched");
+        // socketRef.current.off("poll-updated");
+        // socketRef.current.off("poll-ended");
         socketRef.current.off("show-reaction");
       }
     };
   }, [socketRef.current]);
 
+  // Draw whiteboard lines on canvas whenever whiteboardData changes
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    whiteboardData.forEach(({ x0, y0, x1, y1, color, size }) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    });
+  }, [whiteboardData]);
+
   // Controls
   const handleMute = () => {
-    setIsMuted((m) => !m);
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach((track) => (track.enabled = isMuted));
+    if (!socketRef.current) return;
+    if (isMuted) {
+      socketRef.current.emit("unmute-user", { roomId: classId, userId: user._id });
+    } else {
+      socketRef.current.emit("mute-user", { roomId: classId, userId: user._id });
     }
-    // Emit mute event if needed
+    // Local audio track is enabled/disabled by the socket event handler for 'muted-users'
   };
   const handleCamera = () => {
     setIsCameraOn((c) => !c);
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach((track) => (track.enabled = !isCameraOn));
     }
-    // Emit camera event if needed
+    // Optionally, emit a camera toggle event if you want to sync camera state
   };
   // --- Screen Sharing Logic ---
   const handleScreenShare = async () => {
@@ -423,8 +528,13 @@ const LiveClassRoom = ({ classId }) => {
     }
   };
   const handleRaiseHand = () => {
-    setIsHandRaised((h) => !h);
-    // Emit hand raise event
+    if (!socketRef.current) return;
+    if (isHandRaised) {
+      socketRef.current.emit("lower-hand", { roomId: classId, userId: user._id });
+    } else {
+      socketRef.current.emit("raise-hand", { roomId: classId, userId: user._id, userName: user.firstName + " " + user.lastName });
+    }
+    // The 'hands-updated' event will update local state
   };
   const navigate = useNavigate();
   const handleLeave = () => {
@@ -473,42 +583,56 @@ const LiveClassRoom = ({ classId }) => {
     }, 100);
   };
 
+  // Handler for Polls button in BottomBar
+  const handleOpenPolls = () => {
+    if (isInstructor) {
+      setPollsOpen(true);
+    } else {
+      setSidebarTab("Polls");
+    }
+  };
+
   if (!localStream) {
     return <div className="flex items-center justify-center h-full">Loading camera/mic...</div>;
   }
 
   return (
     <div className="flex flex-col h-screen w-screen bg-gray-100">
+      {notification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg text-lg animate-fadeIn">
+          {notification}
+        </div>
+      )}
       <TopBar classInfo={{ title: "Live Class" }} participants={participants} />
       <div className="flex flex-1 flex-col md:flex-row overflow-hidden">
-        <div className="flex-grow flex flex-col items-center md:items-start md:justify-start p-2 md:p-6">
+        <div className="flex-grow flex flex-col items-center md:items-start md:justify-start p-0 md:p-0 relative h-full w-full">
+          {whiteboardOpen ? (
+            <div className="flex flex-col items-stretch justify-stretch w-full h-full">
+              {/* Use Excalidraw whiteboard with real-time sync */}
+              <div className="w-full h-full flex-1">
+                <ExcalidrawWhiteboard
+                  isInstructor={isInstructor}
+                  socket={socketRef.current}
+                  roomId={classId}
+                  scene={whiteboardScene}
+                />
+              </div>
+              {/* Instructor video as small overlay in bottom right, above bottombar, left of sidebar */}
+              <div className="fixed z-40 w-40 h-24 bottom-24 right-4 md:bottom-28 md:right-[26rem] md:w-56 md:h-32">
+                <InstructorVideo
+                  instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }}
+                  stream={isInstructor ? localStream : (participants.find(p => p.isInstructor && p.socketId !== mySocketId) ? remoteStreams[participants.find(p => p.isInstructor && p.socketId !== mySocketId).socketId] : null)}
+                />
+              </div>
+            </div>
+          ) : (
           <div className="flex justify-center w-full md:max-w-xl mx-auto mt-4 md:mt-8">
-            <InstructorVideo instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }} stream={isInstructor ? localStream : (participants.find(p => p.isInstructor && p.socketId !== mySocketId) ? remoteStreams[participants.find(p => p.isInstructor && p.socketId !== mySocketId).socketId] : null)} />
+              <InstructorVideo
+                instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }}
+                stream={isInstructor ? localStream : (participants.find(p => p.isInstructor && p.socketId !== mySocketId) ? remoteStreams[participants.find(p => p.isInstructor && p.socketId !== mySocketId).socketId] : null)}
+              />
           </div>
-          <div className="w-full md:max-w-xl mx-auto">
-            <StudentVideoBar
-              participants={[
-                // Add self video first
-                ...(!isInstructor ? [{
-                  ...user,
-                  id: user?._id || 'self',
-                  name: user?.firstName + ' ' + user?.lastName,
-                  isSelf: true,
-                  isMuted,
-                  handRaised: isHandRaised,
-                  stream: localStream,
-                  isInstructor: false,
-                }] : []),
-                // Add other students
-                ...participants.filter(p => !p.isInstructor && p.socketId !== mySocketId).map((p) => ({
-                  ...p,
-                  id: p._id || p.socketId,
-                  stream: remoteStreams[p.socketId],
-                  isSelf: false,
-                }))
-              ]}
-            />
-          </div>
+          )}
         </div>
         <div className="w-full md:w-96 h-auto border-l border-gray-200 bg-white">
           <Sidebar
@@ -522,6 +646,13 @@ const LiveClassRoom = ({ classId }) => {
             onMuteUser={handleMuteUser}
             onUnmuteUser={handleUnmuteUser}
             onLowerHand={handleLowerHand}
+            pollHistory={pollHistory}
+            activePoll={activePoll}
+            pollResults={pollResults}
+            hasVoted={hasVoted}
+            onVote={handleVote}
+            sidebarTab={sidebarTab}
+            setSidebarTab={setSidebarTab}
           />
         </div>
       </div>
@@ -529,8 +660,8 @@ const LiveClassRoom = ({ classId }) => {
         recording={isRecording}
         onToggleRecording={() => isRecording ? stopRecording() : startRecording()}
         onDownloadRecording={downloadRecording}
-        onOpenWhiteboard={() => setWhiteboardOpen(true)}
-        onOpenPolls={() => setPollsOpen(true)}
+        onOpenWhiteboard={() => setWhiteboardOpen((prev) => !prev)}
+        onOpenPolls={handleOpenPolls}
         onOpenReactions={() => setReactionsOpen(true)}
         onMute={handleMute}
         onCamera={handleCamera}
@@ -544,27 +675,13 @@ const LiveClassRoom = ({ classId }) => {
         isInstructor={isInstructor}
         hasRecording={recordedChunks.length > 0}
       />
-      {whiteboardOpen && (
-        <WhiteboardModal
-          onClose={() => setWhiteboardOpen(false)}
-          whiteboardData={whiteboardData}
-          onDraw={handleDraw}
-          onClear={handleClearWhiteboard}
-          drawColor={drawColor}
-          setDrawColor={setDrawColor}
-          drawSize={drawSize}
-          setDrawSize={setDrawSize}
-          drawing={drawing}
-          setDrawing={setDrawing}
-        />
-      )}
       {pollsOpen && (
         <PollsModal
           onClose={() => setPollsOpen(false)}
           isInstructor={isInstructor}
           onLaunchPoll={handleLaunchPoll}
           onVote={handleVote}
-          poll={poll}
+          poll={activePoll}
           pollResults={pollResults}
           hasVoted={hasVoted}
           setPollQuestion={setPollQuestion}

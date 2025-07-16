@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import ChatTab from "./ChatTab";
 import ParticipantsTab from "./ParticipantsTab";
 import WhiteboardTab from "./WhiteboardTab";
@@ -7,7 +7,6 @@ import PollsTab from "./PollsTab";
 const tabs = [
   { name: "Chat", component: ChatTab },
   { name: "Participants", component: ParticipantsTab },
-  { name: "Whiteboard", component: WhiteboardTab },
   { name: "Polls", component: PollsTab },
 ];
 
@@ -22,12 +21,19 @@ const Sidebar = ({
   onMuteUser,
   onUnmuteUser,
   onLowerHand,
-  poll,
+  pollHistory,
+  activePoll,
   pollResults,
   hasVoted,
-  onVote
+  onVote,
+  sidebarTab,
+  setSidebarTab
 }) => {
-  const [activeTab, setActiveTab] = useState("Chat");
+  // Use controlled tab state if provided, else fallback to local state
+  const [internalTab, setInternalTab] = React.useState("Chat");
+  const activeTab = sidebarTab || internalTab;
+  const setActiveTab = setSidebarTab || setInternalTab;
+
   let ActiveComponent = tabs.find(t => t.name === activeTab)?.component || ChatTab;
 
   // Render the correct tab with all required props
@@ -39,7 +45,7 @@ const Sidebar = ({
   } else if (ActiveComponent === WhiteboardTab) {
     tabProps = { onOpenWhiteboard };
   } else if (ActiveComponent === PollsTab) {
-    tabProps = { onOpenPolls, poll, pollResults, hasVoted, onVote, isInstructor };
+    tabProps = { onOpenPolls, pollHistory, activePoll, pollResults, hasVoted, onVote, isInstructor };
   }
 
   return (

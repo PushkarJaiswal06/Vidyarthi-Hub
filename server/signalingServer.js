@@ -1,5 +1,7 @@
 const http = require('http');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const User = require('./models/User');
 
 const PORT = process.env.SIGNALING_PORT || 5000;
 
@@ -17,16 +19,35 @@ const io = new Server(server, {
 });
 
 const roomState = {};
+const userImageCache = {};
 
-function getRoomParticipants(roomId) {
+async function getRoomParticipants(roomId) {
   const sockets = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+  // Fetch all userIds in the room
+  const userIds = sockets.map(id => {
+    const s = io.sockets.sockets.get(id);
+    return s ? s.userId : null;
+  }).filter(Boolean);
+  // Find missing images
+  const missingUserIds = userIds.filter(uid => !userImageCache[uid]);
+  if (missingUserIds.length > 0) {
+    try {
+      const users = await User.find({ _id: { $in: missingUserIds } }, { image: 1 }).lean();
+      users.forEach(u => {
+        userImageCache[u._id.toString()] = u.image;
+      });
+    } catch (e) {
+      // ignore errors, fallback to default avatar in frontend
+    }
+  }
   return sockets.map(id => {
     const s = io.sockets.sockets.get(id);
     return s ? {
       socketId: s.id,
       userId: s.userId,
       userName: s.userName,
-      isInstructor: s.isInstructor
+      isInstructor: s.isInstructor,
+      image: userImageCache[s.userId] || undefined
     } : null;
   }).filter(Boolean);
 }
@@ -35,19 +56,30 @@ io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
   // Join a live class room
-  socket.on('join-room', ({ roomId, userId, userName, isInstructor }) => {
+  socket.on('join-room', async ({ roomId, userId, userName, isInstructor }) => {
     console.log(`User ${userName || userId} (${userId}) joining room ${roomId}`);
     socket.join(roomId);
     socket.userId = userId; // Store userId for reference
     socket.userName = userName;
     socket.isInstructor = isInstructor;
+    // Preload image for this user
+    if (!userImageCache[userId]) {
+      try {
+        const userDoc = await User.findById(userId, { image: 1 });
+        if (userDoc && userDoc.image) userImageCache[userId] = userDoc.image;
+      } catch (e) {}
+    }
     // Send the new user the list of existing participants
-    const existingParticipants = getRoomParticipants(roomId).filter(p => p.socketId !== socket.id);
+    const existingParticipants = (await getRoomParticipants(roomId)).filter(p => p.socketId !== socket.id);
     socket.emit('participants', existingParticipants);
+    // Send the latest Excalidraw scene if it exists
+    if (roomState[roomId] && roomState[roomId].excalidrawScene) {
+      socket.emit('whiteboard-scene-update', { elements: roomState[roomId].excalidrawScene });
+    }
     // Notify others about the new user
     socket.to(roomId).emit('user-joined', { userId, userName, socketId: socket.id, isInstructor });
     // Update all with the new participant list
-    io.to(roomId).emit('participants', getRoomParticipants(roomId));
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
     console.log(`${userId} joined room ${roomId}`);
   });
 
@@ -88,18 +120,21 @@ io.on('connection', (socket) => {
   });
 
   // --- Hand Raise & Reactions ---
-  socket.on('raise-hand', ({ roomId, userId, userName }) => {
+  socket.on('raise-hand', async ({ roomId, userId, userName }) => {
     if (!roomState[roomId]) roomState[roomId] = {};
     if (!roomState[roomId].raisedHands) roomState[roomId].raisedHands = [];
     if (!roomState[roomId].raisedHands.some(h => h.userId === userId)) {
       roomState[roomId].raisedHands.push({ userId, userName });
-      io.to(roomId).emit('hands-updated', roomState[roomId].raisedHands);
+      // Mark handRaised on participant
+      io.to(roomId).emit('hands-updated', roomState[roomId].raisedHands.map(h => h.userId));
+      io.to(roomId).emit('participants', await getRoomParticipants(roomId));
     }
   });
-  socket.on('lower-hand', ({ roomId, userId }) => {
+  socket.on('lower-hand', async ({ roomId, userId }) => {
     if (!roomState[roomId] || !roomState[roomId].raisedHands) return;
     roomState[roomId].raisedHands = roomState[roomId].raisedHands.filter(h => h.userId !== userId);
-    io.to(roomId).emit('hands-updated', roomState[roomId].raisedHands);
+    io.to(roomId).emit('hands-updated', roomState[roomId].raisedHands.map(h => h.userId));
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
   });
   socket.on('send-reaction', ({ roomId, emoji, userName }) => {
     io.to(roomId).emit('show-reaction', { emoji, userName });
@@ -116,31 +151,46 @@ io.on('connection', (socket) => {
     roomState[roomId].whiteboardData = [];
     io.to(roomId).emit('whiteboard-clear');
   });
+  // Broadcast whiteboard-opened event
+  socket.on('whiteboard-opened', ({ roomId }) => {
+    io.to(roomId).emit('whiteboard-opened');
+  });
+
+  // --- Excalidraw Whiteboard Scene Broadcast ---
+  socket.on('whiteboard-scene-update', ({ roomId, elements }) => {
+    // Persist the latest scene for the room
+    if (!roomState[roomId]) roomState[roomId] = {};
+    roomState[roomId].excalidrawScene = elements;
+    socket.to(roomId).emit('whiteboard-scene-update', { elements });
+  });
 
   // --- Mute/Unmute ---
-  socket.on('mute-all', ({ roomId }) => {
+  socket.on('mute-all', async ({ roomId }) => {
     if (!roomState[roomId]) roomState[roomId] = {};
-    // For MVP, assume we have a list of userIds in room
     const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
     roomState[roomId].mutedUsers = clients.map(id => io.sockets.sockets.get(id)?.userId).filter(Boolean);
     io.to(roomId).emit('muted-users', roomState[roomId].mutedUsers);
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
   });
-  socket.on('unmute-all', ({ roomId }) => {
+  socket.on('unmute-all', async ({ roomId }) => {
     if (!roomState[roomId]) roomState[roomId] = {};
     roomState[roomId].mutedUsers = [];
     io.to(roomId).emit('muted-users', []);
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
   });
-  socket.on('mute-user', ({ roomId, userId }) => {
+  socket.on('mute-user', async ({ roomId, userId }) => {
     if (!roomState[roomId]) roomState[roomId] = {};
     if (!roomState[roomId].mutedUsers) roomState[roomId].mutedUsers = [];
     if (!roomState[roomId].mutedUsers.includes(userId)) roomState[roomId].mutedUsers.push(userId);
     io.to(roomId).emit('muted-users', roomState[roomId].mutedUsers);
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
   });
-  socket.on('unmute-user', ({ roomId, userId }) => {
+  socket.on('unmute-user', async ({ roomId, userId }) => {
     if (!roomState[roomId]) roomState[roomId] = {};
     if (!roomState[roomId].mutedUsers) roomState[roomId].mutedUsers = [];
     roomState[roomId].mutedUsers = roomState[roomId].mutedUsers.filter(id => id !== userId);
     io.to(roomId).emit('muted-users', roomState[roomId].mutedUsers);
+    io.to(roomId).emit('participants', await getRoomParticipants(roomId));
   });
   socket.on('request-unmute', ({ roomId, userId, userName }) => {
     // Notify instructor(s) in room
@@ -159,8 +209,8 @@ io.on('connection', (socket) => {
       if (roomId !== socket.id) {
         socket.to(roomId).emit('user-left', { socketId: socket.id });
         // Update all with the new participant list
-        setTimeout(() => {
-          io.to(roomId).emit('participants', getRoomParticipants(roomId));
+        setTimeout(async () => {
+          io.to(roomId).emit('participants', await getRoomParticipants(roomId));
         }, 100);
       }
     });
