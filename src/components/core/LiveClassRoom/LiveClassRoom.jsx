@@ -59,15 +59,18 @@ const LiveClassRoom = ({ classId }) => {
   const createPeerConnection = (socketId, isInitiator) => {
     if (peersRef.current[socketId]) return peersRef.current[socketId];
     if (!localStreamRef.current) return null;
+    console.log(`[WebRTC] Creating peer connection to ${socketId}, initiator: ${isInitiator}`);
     const pc = new window.RTCPeerConnection({ iceServers: ICE_SERVERS });
     localStreamRef.current.getTracks().forEach((track) => pc.addTrack(track, localStreamRef.current));
     pc.onicecandidate = (event) => {
       if (event.candidate && socketRef.current) {
+        console.log(`[WebRTC] Sending ICE candidate to ${socketId}`);
         socketRef.current.emit("ice-candidate", { roomId: classId, candidate: event.candidate, userId: user._id, to: socketId });
       }
     };
     pc.ontrack = (event) => {
       const stream = event.streams[0];
+      console.log(`[WebRTC] Received remote stream from ${socketId}`);
       setRemoteStreams((prev) => ({ ...prev, [socketId]: stream }));
     };
     if (isInitiator) {
@@ -75,6 +78,7 @@ const LiveClassRoom = ({ classId }) => {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         if (socketRef.current) {
+          console.log(`[WebRTC] Sending offer to ${socketId}`);
           socketRef.current.emit("offer", { roomId: classId, offer, userId: user._id, to: socketId });
         }
       };
@@ -122,7 +126,10 @@ const LiveClassRoom = ({ classId }) => {
   // Listen for whiteboard scene updates from instructor (for students)
   useEffect(() => {
     if (!isInstructor && socketRef.current) {
-      const handler = ({ elements }) => setWhiteboardScene(elements);
+      const handler = ({ elements }) => {
+        console.log(`[Whiteboard] Received scene update, elements count: ${elements.length}`);
+        setWhiteboardScene(elements);
+      };
       socketRef.current.on("whiteboard-scene-update", handler);
       return () => socketRef.current.off("whiteboard-scene-update", handler);
     }
@@ -249,6 +256,7 @@ const LiveClassRoom = ({ classId }) => {
       }
     });
     socket.on("offer", async ({ offer, socketId }) => {
+      console.log(`[WebRTC] Received offer from ${socketId}`);
       const pc = peersRef.current[socketId] || createPeerConnection(socketId, false);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       if (pendingCandidates[socketId]) {
@@ -257,9 +265,11 @@ const LiveClassRoom = ({ classId }) => {
       }
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+      console.log(`[WebRTC] Sending answer to ${socketId}`);
       socket.emit("answer", { roomId: classId, answer, userId: user._id, to: socketId });
     });
     socket.on("answer", async ({ answer, socketId }) => {
+      console.log(`[WebRTC] Received answer from ${socketId}`);
       const pc = peersRef.current[socketId];
       if (pc && pc.signalingState === "have-local-offer") {
         pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -270,6 +280,7 @@ const LiveClassRoom = ({ classId }) => {
       }
     });
     socket.on("ice-candidate", async ({ candidate, socketId }) => {
+      console.log(`[WebRTC] Received ICE candidate from ${socketId}`);
       const pc = peersRef.current[socketId];
       if (pc && candidate) {
         if (pc.remoteDescription && pc.remoteDescription.type) {
