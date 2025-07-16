@@ -31,7 +31,7 @@ const StudentVideoTile = ({ participant, stream }) => {
 const StudentVideoBar = ({ participants }) => {
   return (
     <div className="flex md:flex-col flex-row md:w-56 w-full md:h-full h-40 overflow-x-auto md:overflow-y-auto bg-gray-50 border-l md:border-t-0 border-t md:border-l">
-      {participants.filter(p => !p.isInstructor).map((participant) => (
+      {participants.map((participant) => (
         <StudentVideoTile key={participant.id} participant={participant} stream={participant.stream} />
       ))}
     </div>

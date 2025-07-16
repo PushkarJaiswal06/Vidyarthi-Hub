@@ -486,7 +486,28 @@ const LiveClassRoom = ({ classId }) => {
             <InstructorVideo instructor={{ name: user?.firstName + " " + user?.lastName || "Instructor" }} stream={isInstructor ? localStream : (participants.find(p => p.isInstructor && p.socketId !== mySocketId) ? remoteStreams[participants.find(p => p.isInstructor && p.socketId !== mySocketId).socketId] : null)} />
           </div>
           <div className="w-full md:max-w-xl mx-auto">
-            <StudentVideoBar participants={participants.filter(p => !p.isInstructor && p.socketId !== mySocketId).map((p) => ({ ...p, stream: remoteStreams[p.socketId] }))} />
+            <StudentVideoBar
+              participants={[
+                // Add self video first
+                ...(!isInstructor ? [{
+                  ...user,
+                  id: user?._id || 'self',
+                  name: user?.firstName + ' ' + user?.lastName,
+                  isSelf: true,
+                  isMuted,
+                  handRaised: isHandRaised,
+                  stream: localStream,
+                  isInstructor: false,
+                }] : []),
+                // Add other students
+                ...participants.filter(p => !p.isInstructor && p.socketId !== mySocketId).map((p) => ({
+                  ...p,
+                  id: p._id || p.socketId,
+                  stream: remoteStreams[p.socketId],
+                  isSelf: false,
+                }))
+              ]}
+            />
           </div>
         </div>
         <div className="w-full md:w-96 h-auto border-l border-gray-200 bg-white">

@@ -17,15 +17,21 @@ const InstructorVideo = ({ instructor, stream }) => {
       <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-blue-600 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold shadow z-10">
         Instructor: {instructor?.name || "Unknown"}
       </div>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{ maxWidth: '100%', maxHeight: '100%' }}
-        className="object-contain"
-        aria-label="Instructor video"
-      />
+      {stream ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ maxWidth: '100%', maxHeight: '100%' }}
+          className="object-contain"
+          aria-label="Instructor video"
+        />
+      ) : (
+        <div className="flex items-center justify-center w-full h-32 text-white text-lg font-semibold">
+          Instructor has not joined yet
+        </div>
+      )}
     </div>
   );
 };
