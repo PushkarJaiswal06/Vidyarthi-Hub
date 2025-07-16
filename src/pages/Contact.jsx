@@ -289,15 +289,15 @@ const Contact = () => {
             <motion.div variants={itemVariants} className="glass rounded-2xl p-6 text-center hover:shadow-neon transition-all duration-300">
               <Phone className="w-12 h-12 text-blue-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Call Us</h3>
-              <p className="text-white/70 mb-4">+1 (555) 123-4567</p>
-              <p className="text-white/60 text-sm">Mon-Fri 9AM-6PM EST</p>
+              <p className="text-white/70 mb-4">+91 8840575310</p>
+              <p className="text-white/60 text-sm">Mon-Sat 9AM-9PM IST</p>
             </motion.div>
 
             <motion.div variants={itemVariants} className="glass rounded-2xl p-6 text-center hover:shadow-neon transition-all duration-300">
               <MapPin className="w-12 h-12 text-teal-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Visit Us</h3>
-              <p className="text-white/70 mb-4">123 Learning Street</p>
-              <p className="text-white/60 text-sm">Education City, EC 12345</p>
+              <p className="text-white/70 mb-4">MMMUT </p>
+              <p className="text-white/60 text-sm">Gorakhpur, Uttar Pradesh</p>
             </motion.div>
 
             <motion.div variants={itemVariants} className="glass rounded-2xl p-6 text-center hover:shadow-neon transition-all duration-300">
