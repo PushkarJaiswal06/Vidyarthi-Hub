@@ -1,39 +1,86 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 
 export default function ExcalidrawWhiteboard({ isInstructor, socket, roomId, scene }) {
   const excalidrawRef = useRef(null);
   const lastSentElements = useRef(null);
 
-  // Instructor: emit scene changes only if changed
-  const handleChange = (elements, appState, files) => {
-    if (isInstructor && socket && roomId) {
-      // Only emit if elements actually changed
-      if (JSON.stringify(elements) !== JSON.stringify(lastSentElements.current)) {
-        socket.emit("whiteboard-scene-update", { roomId, elements });
-        lastSentElements.current = elements;
-      }
+  // INSTRUCTOR ONLY: Handle drawing changes and emit to students
+  const handleChange = useCallback((elements, appState, files) => {
+    if (!socket || !roomId) return;
+    
+    // Only emit if elements actually changed (performance optimization)
+    if (JSON.stringify(elements) !== JSON.stringify(lastSentElements.current)) {
+      console.log('[DEBUG][Whiteboard] Instructor emitting scene update', { elementsCount: elements.length, elements });
+      socket.emit("whiteboard-scene-update", { 
+        roomId, 
+        elements,
+        timestamp: Date.now()
+      });
+      lastSentElements.current = elements;
     }
-  };
+  }, [socket, roomId]);
 
-  // Student: update scene when new scene is received
+  // STUDENTS ONLY: Receive and display instructor's whiteboard updates
   useEffect(() => {
-    if (!isInstructor && excalidrawRef.current && scene) {
-      // Only update if scene differs
-      const currentElements = excalidrawRef.current.getSceneElements ? excalidrawRef.current.getSceneElements() : [];
-      if (JSON.stringify(scene) !== JSON.stringify(currentElements)) {
-        excalidrawRef.current.updateScene({ elements: scene });
-      }
+    console.log('[DEBUG][Whiteboard] ExcalidrawWhiteboard mounted', { isInstructor, socket, roomId });
+    if (isInstructor || !excalidrawRef.current || !scene) return;
+    
+    try {
+      // Update the whiteboard with instructor's changes
+      excalidrawRef.current.updateScene({ 
+        elements: scene,
+        commitToHistory: false // Don't add to undo/redo stack
+      });
+    } catch (error) {
+      console.error("Failed to update whiteboard:", error);
     }
   }, [scene, isInstructor]);
 
+  // Render instructor's interactive whiteboard or student's view-only whiteboard
   return (
     <div style={{ height: "100%", width: "100%" }}>
       <Excalidraw
         ref={excalidrawRef}
-        onChange={isInstructor ? handleChange : undefined}
-        viewModeEnabled={!isInstructor}
+        onChange={handleChange} // TEMP: always set for debug
+        viewModeEnabled={!isInstructor} // Students can only view
+        initialData={{
+          appState: {
+            viewBackgroundColor: "#ffffff",
+            zenModeEnabled: false,
+          }
+        }}
+        UIOptions={{
+          canvasActions: {
+            // Students can't save, load, or export
+            saveFileToDisk: isInstructor,
+            loadScene: isInstructor,
+            export: isInstructor,
+            toggleTheme: true,
+          },
+          // Hide toolbar for students
+          tools: {
+            image: isInstructor,
+            text: isInstructor,
+          }
+        }}
       />
+      
+      {/* Optional: Show connection status */}
+      {!isInstructor && (
+        <div style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          background: socket?.connected ? "#4CAF50" : "#f44336",
+          color: "white",
+          padding: "5px 10px",
+          borderRadius: "4px",
+          fontSize: "12px"
+        }}>
+          {socket?.connected ? "Connected" : "Disconnected"}
+        </div>
+      )}
     </div>
   );
-} 
+}

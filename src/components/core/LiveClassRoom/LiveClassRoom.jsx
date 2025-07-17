@@ -130,10 +130,13 @@ const LiveClassRoom = ({ classId }) => {
         console.log(`[DEBUG][Whiteboard] Received scene update, elements count: ${elements.length}`, elements);
         setWhiteboardScene(elements);
       };
+      console.log('[DEBUG][Whiteboard] Setting up scene update listener for student');
       socketRef.current.on("whiteboard-scene-update", handler);
-      return () => socketRef.current.off("whiteboard-scene-update", handler);
+      return () => {
+        socketRef.current && socketRef.current.off("whiteboard-scene-update", handler);
+      };
     }
-  }, [isInstructor]);
+  }, [isInstructor, socketRef.current]);
 
   // Listen for poll events
   useEffect(() => {
@@ -452,7 +455,6 @@ const LiveClassRoom = ({ classId }) => {
       ctx.stroke();
     });
   }, [whiteboardData]);
-  console.log("a");
   // Controls
   const handleMute = () => {
     if (!socketRef.current) return;
