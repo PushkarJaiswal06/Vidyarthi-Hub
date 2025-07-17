@@ -52,16 +52,14 @@ export default function ExcalidrawWhiteboard({ isInstructor, socket, roomId, sce
         }}
         UIOptions={{
           canvasActions: {
-            // Students can't save, load, or export
-            saveFileToDisk: isInstructor,
-            loadScene: isInstructor,
-            export: isInstructor,
+            saveFileToDisk: !!isInstructor,
+            loadScene: !!isInstructor,
+            export: !!isInstructor,
             toggleTheme: true,
           },
-          // Hide toolbar for students
           tools: {
-            image: isInstructor,
-            text: isInstructor,
+            image: !!isInstructor,
+            text: !!isInstructor,
           }
         }}
       />
