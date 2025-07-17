@@ -452,7 +452,7 @@ const LiveClassRoom = ({ classId }) => {
       ctx.stroke();
     });
   }, [whiteboardData]);
-
+  console.log(a);
   // Controls
   const handleMute = () => {
     if (!socketRef.current) return;
