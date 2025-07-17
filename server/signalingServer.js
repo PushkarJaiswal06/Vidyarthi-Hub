@@ -57,6 +57,7 @@ io.on('connection', (socket) => {
 
   // Join a live class room
   socket.on('join-room', async ({ roomId, userId, userName, isInstructor }) => {
+    console.log('[DEBUG][Signaling] User joined:', { userId, userName, isInstructor, socketId: socket.id });
     console.log(`User ${userName || userId} (${userId}) joining room ${roomId}`);
     socket.join(roomId);
     socket.userId = userId; // Store userId for reference
@@ -158,6 +159,7 @@ io.on('connection', (socket) => {
 
   // --- Excalidraw Whiteboard Scene Broadcast ---
   socket.on('whiteboard-scene-update', ({ roomId, elements }) => {
+    console.log('[DEBUG][Signaling] Relaying whiteboard-scene-update', { roomId, elementsCount: elements.length });
     // Persist the latest scene for the room
     if (!roomState[roomId]) roomState[roomId] = {};
     roomState[roomId].excalidrawScene = elements;

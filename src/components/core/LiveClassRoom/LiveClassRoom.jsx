@@ -70,7 +70,7 @@ const LiveClassRoom = ({ classId }) => {
     };
     pc.ontrack = (event) => {
       const stream = event.streams[0];
-      console.log(`[WebRTC] Received remote stream from ${socketId}`);
+      console.log(`[DEBUG][WebRTC] Received remote stream from ${socketId}`, stream);
       setRemoteStreams((prev) => ({ ...prev, [socketId]: stream }));
     };
     if (isInitiator) {
@@ -127,7 +127,7 @@ const LiveClassRoom = ({ classId }) => {
   useEffect(() => {
     if (!isInstructor && socketRef.current) {
       const handler = ({ elements }) => {
-        console.log(`[Whiteboard] Received scene update, elements count: ${elements.length}`);
+        console.log(`[DEBUG][Whiteboard] Received scene update, elements count: ${elements.length}`, elements);
         setWhiteboardScene(elements);
       };
       socketRef.current.on("whiteboard-scene-update", handler);
