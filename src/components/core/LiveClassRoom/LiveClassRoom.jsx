@@ -123,21 +123,6 @@ const LiveClassRoom = ({ classId }) => {
     }
   }, [user]);
 
-  // Listen for whiteboard scene updates from instructor (for students)
-  useEffect(() => {
-    if (!isInstructor && socketRef.current) {
-      const handler = ({ elements }) => {
-        console.log(`[DEBUG][Whiteboard] Received scene update, elements count: ${elements.length}`, elements);
-        setWhiteboardScene(elements);
-      };
-      console.log('[DEBUG][Whiteboard] Setting up scene update listener for student');
-      socketRef.current.on("whiteboard-scene-update", handler);
-      return () => {
-        socketRef.current && socketRef.current.off("whiteboard-scene-update", handler);
-      };
-    }
-  }, [isInstructor, socketRef.current]);
-
   // Listen for poll events
   useEffect(() => {
     if (!socketRef.current) return;
@@ -239,6 +224,12 @@ const LiveClassRoom = ({ classId }) => {
         isInstructor,
       });
     });
+    // --- Whiteboard scene update for students ---
+    if (!isInstructor) {
+      socket.on("whiteboard-scene-update", ({ elements }) => {
+        setWhiteboardScene(elements);
+      });
+    }
     // On receiving the full participant list (with socketId)
     socket.on("participants", (list) => {
       setParticipants(list);
