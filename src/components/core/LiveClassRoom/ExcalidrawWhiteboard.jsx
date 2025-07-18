@@ -52,14 +52,14 @@ export default function ExcalidrawWhiteboard({ isInstructor, socket, roomId, sce
         }}
         UIOptions={{
           canvasActions: {
-            saveFileToDisk: !!isInstructor,
-            loadScene: !!isInstructor,
-            export: !!isInstructor,
+            saveFileToDisk: isInstructor,
+            loadScene: isInstructor,
+            export: isInstructor,
             toggleTheme: true,
           },
           tools: {
-            image: !!isInstructor,
-            text: !!isInstructor,
+            image: isInstructor,
+            text: isInstructor,
           }
         }}
       />
