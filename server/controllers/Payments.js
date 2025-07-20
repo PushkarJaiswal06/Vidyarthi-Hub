@@ -1,3 +1,5 @@
+console.log("DEBUG RAZORPAY_KEY:", process.env.RAZORPAY_KEY);
+console.log("DEBUG RAZORPAY_SECRET:", process.env.RAZORPAY_SECRET);
 const instance = require("../config/razorpay");
 const Course = require("../models/Course")
 const crypto = require("crypto")
