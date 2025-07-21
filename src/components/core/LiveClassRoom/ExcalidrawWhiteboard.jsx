@@ -28,6 +28,7 @@ export default function ExcalidrawWhiteboard({ isInstructor, socket, roomId, sce
     
     try {
       // Update the whiteboard with instructor's changes
+      console.log('[DEBUG][Whiteboard] Student updating Excalidraw scene', { elementsCount: scene.length, scene });
       excalidrawRef.current.updateScene({ 
         elements: scene,
         commitToHistory: false // Don't add to undo/redo stack

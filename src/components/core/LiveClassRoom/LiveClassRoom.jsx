@@ -116,6 +116,24 @@ const LiveClassRoom = ({ classId }) => {
   // --- Whiteboard Scene State for Real-Time Sync ---
   const [whiteboardScene, setWhiteboardScene] = useState([]);
 
+  // Debug: Log when instructor emits, student receives, and student updates scene
+  // (1) Already present in ExcalidrawWhiteboard.jsx for instructor emit
+
+  // (2) Refactor: Always register 'whiteboard-scene-update' for students
+  useEffect(() => {
+    if (!socketRef.current) return;
+    if (isInstructor) return;
+    const socket = socketRef.current;
+    const handleSceneUpdate = ({ elements }) => {
+      console.log('[DEBUG][Whiteboard] Student received scene update', { elementsCount: elements.length, elements });
+      setWhiteboardScene(elements);
+    };
+    socket.on('whiteboard-scene-update', handleSceneUpdate);
+    return () => {
+      socket.off('whiteboard-scene-update', handleSceneUpdate);
+    };
+  }, [isInstructor, socketRef.current]);
+
   // Set instructor status from Redux user
   useEffect(() => {
     if (user) {
