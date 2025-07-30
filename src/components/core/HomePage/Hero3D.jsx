@@ -1,25 +1,30 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
-
-function CustomHeroModel(props) {
-  const { scene } = useGLTF('/assets/3d/hero-model.glb');
-  return <primitive object={scene} {...props} />;
-}
+import React from 'react';
 
 export default function Hero3D() {
   return (
-    <div style={{ width: 500, height: 500 }}>
-      <Canvas camera={{ position: [2, 2, 6], fov: 45, near: 0.1, far: 100 }}>
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[5, 5, 5]} intensity={1.5} />
-        <directionalLight position={[-5, 5, 5]} intensity={0.7} />
-        <pointLight position={[0, 10, 0]} intensity={1} />
-        <CustomHeroModel scale={1.2} position={[0, -0.5, 0]} />
-        <OrbitControls enableZoom={false} maxPolarAngle={Math.PI / 2.2} minPolarAngle={Math.PI / 2.2} />
-      </Canvas>
+    <div style={{ width: 600, height: 500 }} className="relative overflow-hidden rounded-2xl">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-full h-full object-cover"
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          objectFit: 'cover',
+          borderRadius: '16px'
+        }}
+      >
+        <source 
+          src="https://res.cloudinary.com/dsg5tzzdg/video/upload/v1753903200/Incorrect_Video_Delivered_Request_Correction_msxha5.mp4" 
+          type="video/mp4" 
+        />
+        Your browser does not support the video tag.
+      </video>
+      
+      {/* Optional overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none rounded-2xl"></div>
     </div>
   );
-}
-
-// Preload the model
-useGLTF.preload('/assets/3d/hero-model.glb'); 
+} 

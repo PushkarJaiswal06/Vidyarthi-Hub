@@ -117,8 +117,8 @@ const Home = () => {
             animate="visible"
             className="flex flex-col md:flex-row items-center justify-between gap-8"
           >
-            {/* Left: Hero text/buttons (70%) */}
-            <div className="flex-[7] text-center md:text-left mb-8 md:mb-0">
+            {/* Left: Hero text/buttons (60%) */}
+            <div className="flex-[6] text-center md:text-left mb-8 md:mb-0">
               <motion.div variants={itemVariants} className="mb-8">
                 <AnimatedHeading 
                   size="2xl" 
@@ -153,8 +153,8 @@ const Home = () => {
                 </Link>
               </motion.div>
             </div>
-            {/* Right: 3D Model (30%) */}
-            <div className="flex-[3] flex justify-center items-center">
+            {/* Right: Video Component (40%) */}
+            <div className="flex-[4] flex justify-center items-center">
               <Hero3D />
             </div>
           </motion.div>

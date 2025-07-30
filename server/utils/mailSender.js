@@ -24,7 +24,7 @@ const mailSender = async (email, title, body) => {
             })
 
             let info = await transporter.sendMail({
-                from: 'VidyarthiHub || CodeHelp - by Babbar',
+                from: 'VidyarthiHub || ',
                 to:`${email}`,
                 subject: `${title}`,
                 html: `${body}`,
